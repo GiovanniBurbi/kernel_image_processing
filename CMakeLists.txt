@@ -3,4 +3,5 @@ project(kernel_image_processing)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(kernel_image_processing src/main.cpp)
+add_executable(kernel_image_processing src/main.cpp src/image/Image.cpp src/image/Image.h src/utils/Utils.h src/image/PpmParser.cpp src/image/PpmParser.h src/kernel/KernelFactory.cpp src/kernel/KernelFactory.h)
+include_directories(./src)
