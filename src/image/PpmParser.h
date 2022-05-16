@@ -8,7 +8,9 @@
 #include "Image.h"
 
 Image_t* PPM_import(const char *filename);
+Image_t* PPM_importWithPadding(const char *filename);
 bool PPM_export(const char *filename, Image_t* img);
+
 void test_images();
 
 #endif //KERNEL_IMAGE_PROCESSING_PPMPARSER_H

@@ -185,6 +185,86 @@ Image_t* PPM_import(const char *filename) {
     return img;
 }
 
+Image_t* PPM_importWithPadding(const char *filename) {
+    Image_t* img;
+    FILE* file;
+    char *header;
+    char *line;
+    int ii, jj, kk, channels;
+    int width, height, depth;
+    unsigned char *charData, *charIter;
+    float *imgData, *floatIter;
+    float scale;
+
+    img = NULL;
+
+    file = fopen(filename, "rb");
+    if (file == NULL) {
+        printf("Could not open %s\n", filename);
+        goto cleanup;
+    }
+    header = File_readLine(file);
+    if (header == NULL) {
+        printf("Could not read from %s\n", filename);
+        goto cleanup;
+    } else if (strcmp(header, "P6") != 0 && strcmp(header, "P6\n") != 0
+               && strcmp(header, "P5") != 0 && strcmp(header, "P5\n") != 0
+               && strcmp(header, "S6") != 0 && strcmp(header, "S6\n") != 0) {
+        printf("Could not find magic number for %s\n", filename);
+        goto cleanup;
+    }
+
+    // P5 are monochrome while P6/S6 are RGB
+    // S6 needs to parse number of channels out of file
+    if (strcmp(header, "P5") == 0 || strcmp(header, "P5\n") == 0) {
+        channels = 1;
+        line = nextLine(file);
+        parseDimensions(line, &width, &height);
+    } else if (strcmp(header, "P6") == 0 || strcmp(header, "P6\n") == 0) {
+        channels = 3;
+        line = nextLine(file);
+        parseDimensions(line, &width, &height);
+    } else {
+        line = nextLine(file);
+        parseDimensions(line, &width, &height, &channels);
+    }
+
+    // the line now contains the depth information
+    line = nextLine(file);
+    parseDepth(line, &depth);
+
+    // the rest of the lines contain the data in binary format
+    charData = (unsigned char *) File_read(file,
+                                           width * channels * sizeof(unsigned char), height);
+
+    img = new_image(width + 2, height + 2, channels);
+
+    imgData = image_getData(img);
+
+    charIter = charData;
+    floatIter = imgData;
+
+    scale = 1.0f / ((float) depth);
+
+    for (ii = 0; ii < height + 2; ii++) {
+        for (jj = 0; jj < width + 2; jj++) {
+            for (kk = 0; kk < channels; kk++) {
+                if (ii == 0 || ii == height + 1 || jj == 0 || jj == width + 1) {
+                    *floatIter = 255;
+                } else {
+                    *floatIter = ((float) *charIter) * scale;
+                    charIter++;
+                }
+                floatIter++;
+            }
+        }
+    }
+
+    free(charData);
+    cleanup: fclose(file);
+    return img;
+}
+
 bool PPM_export(const char *filename, Image_t* img) {
     int ii;
     int jj;
