@@ -6,8 +6,8 @@
 #include <omp.h>
 #include <chrono>
 
-#define SEQUENTIAL true
-#define PARALLEL false
+#define SEQUENTIAL false
+#define PARALLEL true
 #define UNROLLING false
 
 
@@ -17,7 +17,7 @@ int main() {
 //    Image_t* image = PPM_importWithPadding("../resources/tiger.ppm");
 
     Image_t* image = PPM_import("../resources/tiger.ppm");
-    float* kernel = createKernel(kernelsType::outline);
+    float* kernel = createKernel(kernelsType::emboss);
 
     Image_t* result;
 
@@ -26,11 +26,11 @@ int main() {
         std::chrono::high_resolution_clock::time_point endTime;
         if (UNROLLING) {
             startTime = std::chrono::high_resolution_clock::now();
-            result = convolutionUnrolling(image, kernel, kernelWidth());
+            result = convolutionUnrolling(image, kernel);
             endTime = std::chrono::high_resolution_clock::now();
         } else {
             startTime = std::chrono::high_resolution_clock::now();
-            result = convolution(image, kernel, kernelWidth());
+            result = convolution(image, kernel);
             endTime = std::chrono::high_resolution_clock::now();
 
         }
@@ -46,18 +46,18 @@ int main() {
 
         if(UNROLLING) {
             startTime = std::chrono::high_resolution_clock::now();
-            result = convolutionOMPUnrollingDoubleSIMD(image, kernel, kernelWidth(), nThreads);
+            result = convolutionOMPUnrollingDoubleSIMD(image, kernel, nThreads);
             endTime = std::chrono::high_resolution_clock::now();
         } else {
             startTime = std::chrono::high_resolution_clock::now();
-            result = convolutionOMPNaiveNoBorder(image, kernel, kernelWidth(), nThreads);
+            result = convolutionOMPNaive(image, kernel, nThreads);
             endTime = std::chrono::high_resolution_clock::now();
         }
         float time = std::chrono::duration_cast<std::chrono::duration<float>>(endTime - startTime).count();
         printf("sequential time %f", time);
     }
 
-    PPM_export("../resources/results/output8.ppm", result);
+    PPM_export("../resources/results/output.ppm", result);
 
     free(kernel);
     image_delete(image);

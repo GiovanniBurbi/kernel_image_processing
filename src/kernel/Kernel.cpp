@@ -4,15 +4,7 @@
 
 #include "Kernel.h"
 
-#define KERNEL_WIDTH 3
-
-int kernelSize() {
-    return KERNEL_WIDTH * KERNEL_WIDTH;
-}
-
-int kernelWidth() {
-    return KERNEL_WIDTH;
-}
+#define KERNEL_SIZE 9
 
 float* createKernel(int type) {
     switch (type) {
@@ -32,13 +24,13 @@ float* createKernel(int type) {
     }
 }
 float* allocateEmptyKernel() {
-    auto* kernel = (float*) malloc(sizeof(float) * kernelSize());
+    auto* kernel = (float*) malloc(sizeof(float) * KERNEL_SIZE);
     return kernel;
 }
 
 float* createBoxBlurKernel() {
     auto* kernel = allocateEmptyKernel();
-    for (int i = 0; i < kernelSize(); i++) {
+    for (int i = 0; i < KERNEL_SIZE; i++) {
         kernel[i] = 0.111111;
     }
 
@@ -48,10 +40,10 @@ float* createBoxBlurKernel() {
 float* createEmbossKernel(){
     auto* kernel = allocateEmptyKernel();
 
-    for (int i = 0; i < kernelSize(); i++) {
+    for (int i = 0; i < KERNEL_SIZE; i++) {
         if (i == 0)
             kernel[i] = -2.f;
-        else if (i == kernelSize() - 1)
+        else if (i == KERNEL_SIZE - 1)
             kernel[i] = 2.f;
         else if (i == 2 || i == 6)
             kernel[i] = 0.f;
@@ -67,8 +59,8 @@ float* createEmbossKernel(){
 float* createGaussianBlurKernel() {
     auto* kernel = allocateEmptyKernel();
 
-    for (int i = 0; i < kernelSize(); ++i) {
-        if (i == kernelSize()/2)
+    for (int i = 0; i < KERNEL_SIZE; ++i) {
+        if (i == KERNEL_SIZE/2)
             kernel[i] = 1/4.f;
         else if (i % 2 == 0)
             kernel[i] = 1/16.f;
@@ -81,8 +73,8 @@ float* createGaussianBlurKernel() {
 float* createOutlineKernel() {
     auto* kernel = allocateEmptyKernel();
 
-    for (int i = 0; i < kernelSize(); i++){
-        if(i == kernelSize()/2)
+    for (int i = 0; i < KERNEL_SIZE; i++){
+        if(i == KERNEL_SIZE/2)
             kernel[i] = 8.f;
         else
             kernel[i] = -1.f;
@@ -93,8 +85,8 @@ float* createOutlineKernel() {
 float* createSharpenKernel() {
     auto* kernel = allocateEmptyKernel();
 
-    for (int i = 0; i < kernelSize(); ++i) {
-        if (i == kernelSize()/2)
+    for (int i = 0; i < KERNEL_SIZE; ++i) {
+        if (i == KERNEL_SIZE/2)
             kernel[i] = 5.f;
         else if (i % 2 == 0)
             kernel[i] = -1.f;

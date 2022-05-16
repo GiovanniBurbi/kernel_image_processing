@@ -15,8 +15,6 @@ enum kernelsType {
     sharpen = 4
 };
 
-int kernelSize();
-int kernelWidth();
 float* createKernel(int type);
 float* allocateEmptyKernel();
 float* createBoxBlurKernel();
