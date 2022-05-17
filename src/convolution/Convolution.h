@@ -10,6 +10,7 @@
 Image_t* convolution(Image_t* image, float* kernel);
 Image_t* convolutionUnrolling(Image_t* image, float* kernel);
 Image_t* convolutionOMPNaive(Image_t* image, float* kernel, int nThreads);
+Image_t* convolutionOMPUnrolling(Image_t* image, float* kernel, int nThreads);
 Image_t* convolutionOMPUnrollingSIMDWidth(Image_t* image, float* kernel, int nThreads);
 Image_t* convolutionOMPUnrollingSIMDChannels(Image_t* image, float* kernel, int nThreads);
 Image_t* convolutionOMPUnrollingDoubleSIMD(Image_t* image, float* kernel, int nThreads);
