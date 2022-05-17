@@ -9,8 +9,8 @@
 #define EXPORT_PATH "../resources/results/"
 #define IMAGE "tiger"
 
-#define SEQUENTIAL false
-#define PARALLEL true
+#define SEQUENTIAL true
+#define PARALLEL false
 #define UNROLLING false
 #define ITER 1
 
@@ -33,10 +33,14 @@ int main() {
     float time = 0;
 
     if (SEQUENTIAL) {
+        std::string log;
+        log.append("Sequential version ");
+
         std::chrono::high_resolution_clock::time_point startTime;
         std::chrono::high_resolution_clock::time_point endTime;
 
         if (UNROLLING) {
+            log.append("with unrolling ");
             for (int i = 0; i < ITER; i++) {
                 startTime = std::chrono::high_resolution_clock::now();
                 Image_t *result = convolutionUnrolling(image, kernel);
@@ -48,6 +52,7 @@ int main() {
             }
             outputname.append("Sequential").append("Unrolling");
         } else {
+            log.append("naive ");
             for (int i = 0; i < ITER; i++) {
                 startTime = std::chrono::high_resolution_clock::now();
                 Image_t *result = convolution(image, kernel);
@@ -61,16 +66,22 @@ int main() {
         }
 
         float time = std::chrono::duration_cast<std::chrono::duration<float>>(endTime - startTime).count();
-        printf("Sequential time %f", time / ITER);
+        log.append("took ").append(std::to_string(time/ITER)).append(" seconds");
+        printf("%s\n", log.c_str());
     }
 
     if (PARALLEL) {
+        std::string log;
+        log.append("OpenMP parallel version ");
+
         std::chrono::high_resolution_clock::time_point startTime;
         std::chrono::high_resolution_clock::time_point endTime;
 
         int nThreads = 2;
 
         if(UNROLLING) {
+            log.append("with unrolling ");
+
             for (int i = 0; i < ITER; i++) {
                 startTime = std::chrono::high_resolution_clock::now();
 //            Image_t* result = convolutionOMPUnrolling(image, kernel, nThreads);
@@ -83,6 +94,8 @@ int main() {
             }
             outputname.append("Openmp").append("Parallel").append("Unrolling").append(std::to_string(nThreads)).append("Threads");
         } else {
+            log.append("naive ");
+
             for (int i = 0; i < ITER; i++) {
                 startTime = std::chrono::high_resolution_clock::now();
                 Image_t *result = convolutionOMPNaive(image, kernel, nThreads);
@@ -94,8 +107,8 @@ int main() {
             }
             outputname.append("Openmp").append("Parallel").append("Naive").append(std::to_string(nThreads)).append("Threads");
         }
-
-        printf("Parallel time %f", time / ITER);
+        log.append("took ").append(std::to_string(time/ITER)).append(" seconds");
+        printf("%s\n", log.c_str());
     }
 
     outputname.append(".ppm");
