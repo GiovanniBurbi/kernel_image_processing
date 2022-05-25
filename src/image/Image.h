@@ -4,6 +4,9 @@
 
 #ifndef KERNEL_IMAGE_PROCESSING_IMAGE_H
 #define KERNEL_IMAGE_PROCESSING_IMAGE_H
+
+#include <memory>
+
 typedef struct {
     int width;
     int height;
