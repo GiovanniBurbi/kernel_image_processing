@@ -7,50 +7,6 @@
 #define KERNEL_RADIUS 1
 #define KERNEL_WIDTH 3
 
-
-//Image_t* convolution(Image_t* image, float* kernel){
-//    float imagePixelR;
-//    float imagePixelG;
-//    float imagePixelB;
-//    float kernelValue;
-//    int xOffset;
-//    int yOffset;
-//
-//    int width = image->width;
-//    int height = image->height;
-//    int channels = image->channels;
-//    int processedWidth = image->width - 2;
-//
-//    float* imageIter = image->data;
-//    float* kernelIter = kernel;
-//
-//    Image_t* processed = new_image(processedWidth, image->height - 2, image->channels);
-//    float* processedIter = processed->data;
-//
-//    for (int i = 1; i < height-1; i++) {
-//        for (int j = 1; j < width-1; j++) {
-//            processedIter[((i - 1) * processedWidth + (j - 1)) * channels ] = 0;
-//            processedIter[((i - 1) * processedWidth + (j - 1)) * channels + 1] = 0;
-//            processedIter[((i - 1) * processedWidth + (j - 1)) * channels + 2] = 0;
-//            for (int y = -KERNEL_RADIUS; y <= KERNEL_RADIUS; y++) {
-//                for (int x = -KERNEL_RADIUS; x <= KERNEL_RADIUS; x++) {
-//                    xOffset = j + x;
-//                    yOffset = i + y;
-//                    imagePixelR = imageIter[(yOffset * width + xOffset) * channels];
-//                    imagePixelG = imageIter[(yOffset * width + xOffset) * channels + 1];
-//                    imagePixelB = imageIter[(yOffset * width + xOffset) * channels + 2];
-//                    kernelValue = kernelIter[(y + KERNEL_RADIUS) * KERNEL_WIDTH + x + KERNEL_RADIUS];
-//                    processedIter[((i - 1) * processedWidth + (j - 1)) * channels] += (imagePixelR * kernelValue);
-//                    processedIter[((i - 1) * processedWidth + (j - 1)) * channels + 1] += (imagePixelG * kernelValue);
-//                    processedIter[((i - 1) * processedWidth + (j - 1)) * channels + 2] += (imagePixelB * kernelValue);
-//
-//                }
-//            }
-//        }
-//    }
-//    return processed;
-//}
-
  Image_t* convolution(Image_t* image, float* kernel){
     float imagePixel;
     float kernelValue;
@@ -185,37 +141,80 @@ Image_t* convolutionUnrolling(Image_t* image, float* kernel){
     return processed;
 }
 
-// Image_t* convolutionUnrolling(Image_t* image, float* kernel){
-//    int width = image->width;
-//    int height = image->height;
-//    int channels = image->channels;
-//    int processedWidth = image->width - 2;
-//
-//    float* imageIter = image->data;
-//    float* kernelIter = kernel;
-//
-//    Image_t* processed = new_image(processedWidth, image->height - 2, image->channels);
-//    float* processedIter = processed->data;
-//
-//    for (int i = 1; i < height - 1; i++) {
-//        for (int j = 1; j < width - 1; j++) {
-//            for (int k = 0; k < channels; k++) {
-//                processedIter[((i-1) * processedWidth + (j-1)) * channels + k] =
-//                        imageIter[((i-1) * width + j-1) * channels + k] * kernelIter[0] +
-//                        imageIter[((i-1) * width + j) * channels + k] * kernelIter[1] +
-//                        imageIter[((i-1) * width + j+1) * channels + k] * kernelIter[2] +
-//                        imageIter[(i * width + j-1) * channels + k] * kernelIter[3] +
-//                        imageIter[(i * width + j) * channels + k] * kernelIter[4] +
-//                        imageIter[(i * width + j+1) * channels + k] * kernelIter[5] +
-//                        imageIter[((i+1) * width + j-1) * channels + k] * kernelIter[6] +
-//                        imageIter[((i+1) * width + j) * channels + k] * kernelIter[7] +
-//                        imageIter[((i+1) * width + j+1) * channels + k] * kernelIter[8];
-//            }
-//        }
-//    }
-//
-//    return processed;
-//}
+ Image_t* convolutionUnrollingKernel(Image_t* image, float* kernel){
+    int width = image->width;
+    int height = image->height;
+    int channels = image->channels;
+    int processedWidth = image->width - 2;
+
+    float* imageIter = image->data;
+    float* kernelIter = kernel;
+
+    Image_t* processed = new_image(processedWidth, image->height - 2, image->channels);
+    float* processedIter = processed->data;
+
+    for (int i = 1; i < height - 1; i++) {
+        for (int j = 1; j < width - 1; j++) {
+            for (int k = 0; k < channels; k++) {
+                processedIter[((i-1) * processedWidth + (j-1)) * channels + k] =
+                        imageIter[((i-1) * width + j-1) * channels + k] * kernelIter[0] +
+                        imageIter[((i-1) * width + j) * channels + k] * kernelIter[1] +
+                        imageIter[((i-1) * width + j+1) * channels + k] * kernelIter[2] +
+                        imageIter[(i * width + j-1) * channels + k] * kernelIter[3] +
+                        imageIter[(i * width + j) * channels + k] * kernelIter[4] +
+                        imageIter[(i * width + j+1) * channels + k] * kernelIter[5] +
+                        imageIter[((i+1) * width + j-1) * channels + k] * kernelIter[6] +
+                        imageIter[((i+1) * width + j) * channels + k] * kernelIter[7] +
+                        imageIter[((i+1) * width + j+1) * channels + k] * kernelIter[8];
+            }
+        }
+    }
+
+    return processed;
+}
+
+Image_t* convolutionUnrollingChannels(Image_t* image, float* kernel){
+    float imagePixelR;
+    float imagePixelG;
+    float imagePixelB;
+    float kernelValue;
+    int xOffset;
+    int yOffset;
+
+    int width = image->width;
+    int height = image->height;
+    int channels = image->channels;
+    int processedWidth = image->width - 2;
+
+    float* imageIter = image->data;
+    float* kernelIter = kernel;
+
+    Image_t* processed = new_image(processedWidth, image->height - 2, image->channels);
+    float* processedIter = processed->data;
+
+    for (int i = 1; i < height-1; i++) {
+        for (int j = 1; j < width-1; j++) {
+            processedIter[((i - 1) * processedWidth + (j - 1)) * channels ] = 0;
+            processedIter[((i - 1) * processedWidth + (j - 1)) * channels + 1] = 0;
+            processedIter[((i - 1) * processedWidth + (j - 1)) * channels + 2] = 0;
+            for (int y = -KERNEL_RADIUS; y <= KERNEL_RADIUS; y++) {
+                for (int x = -KERNEL_RADIUS; x <= KERNEL_RADIUS; x++) {
+                    xOffset = j + x;
+                    yOffset = i + y;
+                    imagePixelR = imageIter[(yOffset * width + xOffset) * channels];
+                    imagePixelG = imageIter[(yOffset * width + xOffset) * channels + 1];
+                    imagePixelB = imageIter[(yOffset * width + xOffset) * channels + 2];
+                    kernelValue = kernelIter[(y + KERNEL_RADIUS) * KERNEL_WIDTH + x + KERNEL_RADIUS];
+                    processedIter[((i - 1) * processedWidth + (j - 1)) * channels] += (imagePixelR * kernelValue);
+                    processedIter[((i - 1) * processedWidth + (j - 1)) * channels + 1] += (imagePixelG * kernelValue);
+                    processedIter[((i - 1) * processedWidth + (j - 1)) * channels + 2] += (imagePixelB * kernelValue);
+
+                }
+            }
+        }
+    }
+    return processed;
+}
 
 ImageSoA_t* convolutionUnrollingSoA(ImageSoA_t* image, float* kernel){
     float imageRPixel;
@@ -514,6 +513,61 @@ ImageSoA_t* convolutionOMPUnrollingSIMDWidthSoA(ImageSoA_t* image, float* kernel
 }
 
 Image_t* convolutionOMPUnrolling(Image_t* image, float* kernel, int nThreads){
+    int width = image->width;
+    int height = image->height;
+    int channels = image->channels;
+    int processedWidth = image->width - 2;
+
+    float* imageIter = image->data;
+    float* kernelIter = kernel;
+
+    Image_t* processed = new_image(processedWidth, image->height - 2, image->channels);
+    float* processedIter = processed->data;
+
+#pragma omp parallel for default(none) \
+    shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth) \
+    collapse(2) schedule(static) num_threads(nThreads)
+    for (int i = 1; i < height - 1; i++) {
+        for (int j = 1; j < width - 1; j++) {
+            processedIter[((i-1) * processedWidth + (j-1)) * channels] =
+                    imageIter[((i-1) * width + j-1) * channels] * kernelIter[0] +
+                    imageIter[((i-1) * width + j) * channels] * kernelIter[1] +
+                    imageIter[((i-1) * width + j+1) * channels] * kernelIter[2] +
+                    imageIter[(i * width + j-1) * channels] * kernelIter[3] +
+                    imageIter[(i * width + j) * channels] * kernelIter[4] +
+                    imageIter[(i * width + j+1) * channels] * kernelIter[5] +
+                    imageIter[((i+1) * width + j-1) * channels] * kernelIter[6] +
+                    imageIter[((i+1) * width + j) * channels] * kernelIter[7] +
+                    imageIter[((i+1) * width + j+1) * channels] * kernelIter[8];
+
+            processedIter[((i-1) * processedWidth + (j-1)) * channels + 1] =
+                    imageIter[((i-1) * width + j-1) * channels + 1] * kernelIter[0] +
+                    imageIter[((i-1) * width + j) * channels + 1] * kernelIter[1] +
+                    imageIter[((i-1) * width + j+1) * channels + 1] * kernelIter[2] +
+                    imageIter[(i * width + j-1) * channels + 1] * kernelIter[3] +
+                    imageIter[(i * width + j) * channels + 1] * kernelIter[4] +
+                    imageIter[(i * width + j+1) * channels + 1] * kernelIter[5] +
+                    imageIter[((i+1) * width + j-1) * channels + 1] * kernelIter[6] +
+                    imageIter[((i+1) * width + j) * channels + 1] * kernelIter[7] +
+                    imageIter[((i+1) * width + j+1) * channels + 1] * kernelIter[8];
+
+            processedIter[((i-1) * processedWidth + (j-1)) * channels + 2] =
+                    imageIter[((i-1) * width + j-1) * channels + 2] * kernelIter[0] +
+                    imageIter[((i-1) * width + j) * channels + 2] * kernelIter[1] +
+                    imageIter[((i-1) * width + j+1) * channels + 2] * kernelIter[2] +
+                    imageIter[(i * width + j-1) * channels + 2] * kernelIter[3] +
+                    imageIter[(i * width + j) * channels + 2] * kernelIter[4] +
+                    imageIter[(i * width + j+1) * channels + 2] * kernelIter[5] +
+                    imageIter[((i+1) * width + j-1) * channels + 2] * kernelIter[6] +
+                    imageIter[((i+1) * width + j) * channels + 2] * kernelIter[7] +
+                    imageIter[((i+1) * width + j+1) * channels + 2] * kernelIter[8];
+        }
+    }
+
+    return processed;
+}
+
+Image_t* convolutionOMPUnrollingKernel(Image_t* image, float* kernel, int nThreads){
     int width = image->width;
     int height = image->height;
     int channels = image->channels;

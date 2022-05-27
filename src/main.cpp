@@ -9,11 +9,11 @@
 #define EXPORT_PATH "../resources/results/"
 #define IMAGE "deer480p"
 
-#define SEQUENTIAL false
-#define PARALLEL true
-#define UNROLLING true
+#define SEQUENTIAL true
+#define PARALLEL false
+#define UNROLLING false
 #define SOA false
-#define ITER 3
+#define ITER 1
 #define N_THREADS 2
 
 
@@ -29,7 +29,6 @@ int main() {
     float time = 0;
 
     if (!SOA) {
-        //    Image_t* image = PPM_importWithPadding("../resources/tiger.ppm");
         Image_t* image = PPM_import(filename.c_str());
         Image_t* output;
 

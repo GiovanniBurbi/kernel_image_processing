@@ -477,7 +477,7 @@ bool PPM_exportSoA(const char *filename, ImageSoA_t* img) {
 }
 
 void test_images() {
-    Image_t* inputImg = PPM_import("../resources/computer_programming.ppm");
+    Image_t* inputImg = PPM_import("../resources/source/computer_programming.ppm");
 
     for (int i = 0; i < 300; i++) {
         image_setPixel(inputImg, i, 100, 0, float(i) / 300);
@@ -488,7 +488,7 @@ void test_images() {
     image_delete(inputImg);
 
     Image_t* newImg = PPM_import("../resources/results/test_output.ppm");
-    inputImg = PPM_import("../resources/computer_programming.ppm");
+    inputImg = PPM_import("../resources/source/computer_programming.ppm");
     if (image_is_same(inputImg, newImg))
         printf("Img uguali\n");
     else

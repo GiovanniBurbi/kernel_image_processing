@@ -11,11 +11,14 @@
 Image_t* convolution(Image_t* image, float* kernel);
 ImageSoA_t* convolutionSoA(ImageSoA_t* image, float* kernel);
 Image_t* convolutionUnrolling(Image_t* image, float* kernel);
+Image_t* convolutionUnrollingKernel(Image_t* image, float* kernel);
+Image_t* convolutionUnrollingChannels(Image_t* image, float* kernel);
 ImageSoA_t* convolutionUnrollingSoA(ImageSoA_t* image, float* kernel);
 Image_t* convolutionOMPNaive(Image_t* image, float* kernel, int nThreads);
 Image_t* convolutionOMPNaiveUnrollingChannels(Image_t* image, float* kernel, int nThreads);
 ImageSoA_t* convolutionOMPNaiveSoA(ImageSoA_t* image, float* kernel, int nThreads);
 Image_t* convolutionOMPUnrolling(Image_t* image, float* kernel, int nThreads);
+Image_t* convolutionOMPUnrollingKernel(Image_t* image, float* kernel, int nThreads);
 ImageSoA_t* convolutionOMPUnrollingSoA(ImageSoA_t* image, float* kernel, int nThreads);
 Image_t* convolutionOMPUnrollingSIMDWidth(Image_t* image, float* kernel, int nThreads);
 ImageSoA_t* convolutionOMPUnrollingSIMDWidthSoA(ImageSoA_t* image, float* kernel, int nThreads);
