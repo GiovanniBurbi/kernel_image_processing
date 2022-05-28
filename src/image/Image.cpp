@@ -22,7 +22,7 @@ Image_t* new_image(int width, int height, int channels, float *data) {
 }
 
 Image_t* new_image(int width, int height, int channels) {
-    float *data = (float*) malloc(sizeof(float) * width * height * channels);
+    auto *data = (float*) malloc(sizeof(float) * width * height * channels);
     return new_image(width, height, channels, data);
 }
 
@@ -45,8 +45,6 @@ void image_setPixel(Image_t* img, int x, int y, int c, float val) {
     int pitch = image_getPitch(img);
 
     data[y * pitch + x * channels + c] = val;
-
-    return;
 }
 
 float image_getPixel(Image_t* img, int x, int y, int c) {

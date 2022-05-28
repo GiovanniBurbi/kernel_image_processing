@@ -26,9 +26,10 @@ int main() {
     outputname.append(EXPORT_PATH).append(IMAGE);
 
     float* kernel = createKernel(kernelsType::outline);
-    float time = 0;
 
     if (!SOA) {
+        float time = 0;
+
         Image_t* image = PPM_import(filename.c_str());
         Image_t* output;
 
@@ -120,6 +121,8 @@ int main() {
     }
 
     if (SOA) {
+        float time = 0;
+
         ImageSoA_t* image = PPM_importSoA(filename.c_str());
         ImageSoA_t* output;
 

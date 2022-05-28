@@ -26,9 +26,9 @@ ImageSoA_t* new_imageSoA(int width, int height, int channels) {
         return NULL;
     }
 
-    float *r = (float*) malloc(sizeof(float) * width * height);
-    float *g = (float*) malloc(sizeof(float) * width * height);
-    float *b = (float*) malloc(sizeof(float) * width * height);
+    auto *r = (float*) malloc(sizeof(float) * width * height);
+    auto *g = (float*) malloc(sizeof(float) * width * height);
+    auto *b = (float*) malloc(sizeof(float) * width * height);
     return new_ImageSoA(width, height, channels, r, g, b);
 }
 
@@ -71,8 +71,6 @@ void image_setPixel(ImageSoA_t* img, int x, int y, int c, float val) {
         default:
             std::cerr << "Wrong channel, it must be 0, 1 or 2" << std::endl;
     }
-
-    return;
 }
 
 float image_getPixel(ImageSoA_t* img, int x, int y, int c) {
