@@ -108,6 +108,10 @@ bool File_write(FILE* file, const void *buffer, size_t size, size_t count) {
     return true;
 }
 
+/*
+ * Import a ppm image and return a pointer to an Image_t struct
+ * The data layout is Array of Structures
+ * */
 Image_t* PPM_import(const char *filename) {
     Image_t* img;
     FILE* file;
@@ -184,6 +188,10 @@ Image_t* PPM_import(const char *filename) {
     return img;
 }
 
+/*
+ * Import a ppm image and return a pointer to an ImageSoA_t struct
+ * The data layout is Structure of Arrays
+ * */
 ImageSoA_t* PPM_importSoA(const char *filename) {
     ImageSoA_t* img;
     FILE* file;
@@ -256,8 +264,6 @@ ImageSoA_t* PPM_importSoA(const char *filename) {
             charIter++;
             floatBIter[ii * width + jj] = ((float) *charIter) * scale;
             charIter++;
-//                floatIter[(width * height * kk) + (ii * width + jj)] = ((float) *charIter) * scale;
-//                charIter++;
         }
     }
 
@@ -266,6 +272,11 @@ ImageSoA_t* PPM_importSoA(const char *filename) {
     return img;
 }
 
+/*
+ * Import a ppm image and return a pointer to an Image_t struct
+ * The data layout is Array of Structures
+ * It adds one pixel of padding in the border of the image (for 3x3 kernels)
+ * */
 Image_t* PPM_importWithPadding(const char *filename) {
     Image_t* img;
     FILE* file;
@@ -346,6 +357,9 @@ Image_t* PPM_importWithPadding(const char *filename) {
     return img;
 }
 
+/*
+ * It takes as input a reference to an Image_t struct and export a ppm image from it
+ * */
 bool PPM_export(const char *filename, Image_t* img) {
     int ii;
     int jj;
@@ -406,6 +420,9 @@ bool PPM_export(const char *filename, Image_t* img) {
     return true;
 }
 
+/*
+ * It takes as input a reference to an ImageSoA_t struct and export a ppm image from it
+ * */
 bool PPM_exportSoA(const char *filename, ImageSoA_t* img) {
     int ii;
     int jj;
@@ -460,6 +477,7 @@ bool PPM_exportSoA(const char *filename, ImageSoA_t* img) {
             *charIter = (unsigned char) ceil(
                     clamp(*floatBIter, 0, 1) * depth);
             charIter++;
+
             floatRIter++;
             floatGIter++;
             floatBIter++;
@@ -476,6 +494,9 @@ bool PPM_exportSoA(const char *filename, ImageSoA_t* img) {
     return true;
 }
 
+/*
+ * Method to verify if import, modification and export of a ppm image works
+ * */
 void test_images() {
     Image_t* inputImg = PPM_import("../resources/source/computer_programming.ppm");
 
