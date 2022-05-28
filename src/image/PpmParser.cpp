@@ -236,7 +236,7 @@ ImageSoA_t* PPM_importSoA(const char *filename) {
     charData = (unsigned char *) File_read(file,
                                            width * channels * sizeof(unsigned char), height);
 
-    img = new_imageSoA(width, height);
+    img = new_imageSoA(width, height, channels);
 
     imgR = image_getR(img);
     imgG = image_getG(img);

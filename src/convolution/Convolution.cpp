@@ -3,26 +3,33 @@
 //
 
 #include "Convolution.h"
+#include <iostream>
 
 #define KERNEL_RADIUS 1
 #define KERNEL_WIDTH 3
+#define PIXEL_LOST_PER_AXIS 2
+#define RGB_CHANNELS 3
 
+/*
+ * Sequential convolution naive implementation
+ * It works for images with any number of channels and any kernels
+ * */
  Image_t* convolution(Image_t* image, float* kernel){
     float imagePixel;
     float kernelValue;
     int xOffset;
     int yOffset;
 
-    int width = image->width;
-    int height = image->height;
-    int channels = image->channels;
-    int processedWidth = image->width - 2;
+    int width = image_getWidth(image);
+    int height = image_getHeight(image);
+    int channels = image_getChannels(image);
+    int processedWidth = width - PIXEL_LOST_PER_AXIS;
 
-    float* imageIter = image->data;
+    float* imageIter = image_getData(image);
     float* kernelIter = kernel;
 
-    Image_t* processed = new_image(processedWidth, image->height - 2, image->channels);
-    float* processedIter = processed->data;
+    Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
+    float* processedIter = image_getData(processed);
 
     for (int i = 1; i < height-1; i++) {
         for (int j = 1; j < width-1; j++) {
@@ -44,44 +51,50 @@
     return processed;
 }
 
+/*
+ * Sequential convolution implementation with SoA data layout
+ * It works for images with three channels and any kernel
+ * */
 ImageSoA_t* convolutionSoA(ImageSoA_t* image, float* kernel){
-    float imageRPixel;
-    float imageGPixel;
-    float imageBPixel;
     float kernelValue;
     int xOffset;
     int yOffset;
 
-    int width = image->width;
-    int height = image->height;
-    int processedWidth = image->width - 2;
+    int width = image_getWidth(image);
+    int height = image_getHeight(image);
+    int processedWidth = width - PIXEL_LOST_PER_AXIS;
 
-    float* imageRIter = image->r;
-    float* imageGIter = image->g;
-    float* imageBIter = image->b;
+    if (image_getChannels(image) != RGB_CHANNELS) {
+        std::cerr << "This convolution implementation works only with images with three channels " << std::endl;
+        return nullptr;
+    }
+
+    float* imageRIter = image_getR(image);
+    float* imageGIter = image_getG(image);
+    float* imageBIter = image_getB(image);
     float* kernelIter = kernel;
 
-    ImageSoA_t* processed = new_imageSoA(processedWidth, image->height - 2);
-    float* processedRIter = processed->r;
-    float* processedGIter = processed->g;
-    float* processedBIter = processed->b;
+    ImageSoA_t* processed = new_imageSoA(processedWidth, height - PIXEL_LOST_PER_AXIS, RGB_CHANNELS);
+    float* processedRIter = image_getR(processed);
+    float* processedGIter = image_getG(processed);
+    float* processedBIter = image_getB(processed);
 
     for (int i = 1; i < height-1; i++) {
         for (int j = 1; j < width-1; j++) {
             processedRIter[(i-1) * processedWidth + (j-1)] = 0;
             processedGIter[(i-1) * processedWidth + (j-1)] = 0;
             processedBIter[(i-1) * processedWidth + (j-1)] = 0;
+
             for (int y = -KERNEL_RADIUS; y <= KERNEL_RADIUS; y++) {
                 for (int x = -KERNEL_RADIUS; x <= KERNEL_RADIUS; x++) {
                     xOffset = j + x;
                     yOffset = i + y;
-                    imageRPixel = imageRIter[(yOffset * width + xOffset)];
-                    imageGPixel = imageGIter[(yOffset * width + xOffset)];
-                    imageBPixel = imageBIter[(yOffset * width + xOffset)];
+
                     kernelValue = kernelIter[(y + KERNEL_RADIUS) * KERNEL_WIDTH + x + KERNEL_RADIUS];
-                    processedRIter[((i - 1) * processedWidth + (j - 1))] += (imageRPixel * kernelValue);
-                    processedGIter[((i - 1) * processedWidth + (j - 1))] += (imageGPixel * kernelValue);
-                    processedBIter[((i - 1) * processedWidth + (j - 1))] += (imageBPixel * kernelValue);
+
+                    processedRIter[((i - 1) * processedWidth + (j - 1))] += (imageRIter[(yOffset * width + xOffset)] * kernelValue);
+                    processedGIter[((i - 1) * processedWidth + (j - 1))] += (imageGIter[(yOffset * width + xOffset)] * kernelValue);
+                    processedBIter[((i - 1) * processedWidth + (j - 1))] += (imageBIter[(yOffset * width + xOffset)] * kernelValue);
                 }
             }
         }
@@ -89,17 +102,26 @@ ImageSoA_t* convolutionSoA(ImageSoA_t* image, float* kernel){
     return processed;
 }
 
+/*
+ * Sequential convolution implementation with loop unrolling
+ * It works for images with three channels and 3x3 kernels
+ * */
 Image_t* convolutionUnrolling(Image_t* image, float* kernel){
-    int width = image->width;
-    int height = image->height;
-    int channels = image->channels;
-    int processedWidth = image->width - 2;
+    int width = image_getWidth(image);
+    int height = image_getHeight(image);
+    int channels = image_getChannels(image);
+    int processedWidth = width - PIXEL_LOST_PER_AXIS;
 
-    float* imageIter = image->data;
+    if (channels != 3) {
+        std::cerr << "This convolution implementation works only with images with three channels " << std::endl;
+        return nullptr;
+    }
+
+    float* imageIter = image_getData(image);
     float* kernelIter = kernel;
 
-    Image_t* processed = new_image(processedWidth, image->height - 2, image->channels);
-    float* processedIter = processed->data;
+    Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, RGB_CHANNELS);
+    float* processedIter = image_getData(processed);
 
     for (int i = 1; i < height - 1; i++) {
         for (int j = 1; j < width - 1; j++) {
@@ -141,17 +163,21 @@ Image_t* convolutionUnrolling(Image_t* image, float* kernel){
     return processed;
 }
 
+/*
+ * Sequential convolution implementation with loop unrolling of kernel only
+ * It works for images with any number of channels and 3x3 kernels
+ * */
  Image_t* convolutionUnrollingKernel(Image_t* image, float* kernel){
-    int width = image->width;
-    int height = image->height;
-    int channels = image->channels;
-    int processedWidth = image->width - 2;
+    int width = image_getWidth(image);
+    int height = image_getHeight(image);
+    int channels = image_getChannels(image);
+    int processedWidth = width - PIXEL_LOST_PER_AXIS;
 
-    float* imageIter = image->data;
+    float* imageIter = image_getData(image);
     float* kernelIter = kernel;
 
-    Image_t* processed = new_image(processedWidth, image->height - 2, image->channels);
-    float* processedIter = processed->data;
+    Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
+    float* processedIter = image_getData(processed);
 
     for (int i = 1; i < height - 1; i++) {
         for (int j = 1; j < width - 1; j++) {
@@ -173,41 +199,46 @@ Image_t* convolutionUnrolling(Image_t* image, float* kernel){
     return processed;
 }
 
+/*
+ * Sequential convolution implementation with loop unrolling of channels only
+ * It works only for images with three channels and any kernel
+ * */
 Image_t* convolutionUnrollingChannels(Image_t* image, float* kernel){
-    float imagePixelR;
-    float imagePixelG;
-    float imagePixelB;
     float kernelValue;
     int xOffset;
     int yOffset;
 
-    int width = image->width;
-    int height = image->height;
-    int channels = image->channels;
-    int processedWidth = image->width - 2;
+    int width = image_getWidth(image);
+    int height = image_getHeight(image);
+    int channels = image_getChannels(image);
+    int processedWidth = width - PIXEL_LOST_PER_AXIS;
 
-    float* imageIter = image->data;
+    if (channels != RGB_CHANNELS) {
+        std::cerr << "This convolution implementation works only with images with three channels " << std::endl;
+        return nullptr;
+    }
+
+    float* imageIter = image_getData(image);
     float* kernelIter = kernel;
 
-    Image_t* processed = new_image(processedWidth, image->height - 2, image->channels);
-    float* processedIter = processed->data;
+    Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, RGB_CHANNELS);
+    float* processedIter = image_getData(processed);
 
     for (int i = 1; i < height-1; i++) {
         for (int j = 1; j < width-1; j++) {
             processedIter[((i - 1) * processedWidth + (j - 1)) * channels ] = 0;
             processedIter[((i - 1) * processedWidth + (j - 1)) * channels + 1] = 0;
             processedIter[((i - 1) * processedWidth + (j - 1)) * channels + 2] = 0;
+
             for (int y = -KERNEL_RADIUS; y <= KERNEL_RADIUS; y++) {
                 for (int x = -KERNEL_RADIUS; x <= KERNEL_RADIUS; x++) {
                     xOffset = j + x;
                     yOffset = i + y;
-                    imagePixelR = imageIter[(yOffset * width + xOffset) * channels];
-                    imagePixelG = imageIter[(yOffset * width + xOffset) * channels + 1];
-                    imagePixelB = imageIter[(yOffset * width + xOffset) * channels + 2];
+
                     kernelValue = kernelIter[(y + KERNEL_RADIUS) * KERNEL_WIDTH + x + KERNEL_RADIUS];
-                    processedIter[((i - 1) * processedWidth + (j - 1)) * channels] += (imagePixelR * kernelValue);
-                    processedIter[((i - 1) * processedWidth + (j - 1)) * channels + 1] += (imagePixelG * kernelValue);
-                    processedIter[((i - 1) * processedWidth + (j - 1)) * channels + 2] += (imagePixelB * kernelValue);
+                    processedIter[((i - 1) * processedWidth + (j - 1)) * channels] += (imageIter[(yOffset * width + xOffset) * channels] * kernelValue);
+                    processedIter[((i - 1) * processedWidth + (j - 1)) * channels + 1] += (imageIter[(yOffset * width + xOffset) * channels + 1] * kernelValue);
+                    processedIter[((i - 1) * processedWidth + (j - 1)) * channels + 2] += (imageIter[(yOffset * width + xOffset) * channels + 2] * kernelValue);
 
                 }
             }
@@ -216,27 +247,29 @@ Image_t* convolutionUnrollingChannels(Image_t* image, float* kernel){
     return processed;
 }
 
+/*
+ * Sequential convolution implementation with loop unrolling and SoA data layout
+ * It works only for images with three channels and 3x3 kernels
+ * */
 ImageSoA_t* convolutionUnrollingSoA(ImageSoA_t* image, float* kernel){
-    float imageRPixel;
-    float imageGPixel;
-    float imageBPixel;
-    float kernelValue;
-    int xOffset;
-    int yOffset;
+    int width = image_getWidth(image);
+    int height = image_getHeight(image);
+    int processedWidth = width - PIXEL_LOST_PER_AXIS;
 
-    int width = image->width;
-    int height = image->height;
-    int processedWidth = image->width - 2;
+    if (image_getChannels(image) != RGB_CHANNELS) {
+        std::cerr << "This convolution implementation works only with images with three channels " << std::endl;
+        return nullptr;
+    }
 
-    float* imageRIter = image->r;
-    float* imageGIter = image->g;
-    float* imageBIter = image->b;
+    float* imageRIter = image_getR(image);
+    float* imageGIter = image_getG(image);
+    float* imageBIter = image_getB(image);
     float* kernelIter = kernel;
 
-    ImageSoA_t* processed = new_imageSoA(processedWidth, image->height - 2);
-    float* processedRIter = processed->r;
-    float* processedGIter = processed->g;
-    float* processedBIter = processed->b;
+    ImageSoA_t* processed = new_imageSoA(processedWidth, height - PIXEL_LOST_PER_AXIS, RGB_CHANNELS);
+    float* processedRIter = image_getR(processed);
+    float* processedGIter = image_getG(processed);
+    float* processedBIter = image_getB(processed);
 
     for (int i = 1; i < height-1; i++) {
         for (int j = 1; j < width-1; j++) {
@@ -277,22 +310,26 @@ ImageSoA_t* convolutionUnrollingSoA(ImageSoA_t* image, float* kernel){
     return processed;
 }
 
+/*
+ * Parallel convolution naive implementation with openMP
+ * It works for images with any number of channels and any kernels
+ * */
 Image_t* convolutionOMPNaive(Image_t* image, float* kernel, int nThreads){
     float imagePixel;
     float kernelValue;
     int xOffset;
     int yOffset;
 
-    int width = image->width;
-    int height = image->height;
-    int channels = image->channels;
-    int processedWidth = image->width - 2;
+    int width = image_getWidth(image);
+    int height = image_getHeight(image);
+    int channels = image_getChannels(image);
+    int processedWidth = width - PIXEL_LOST_PER_AXIS;
 
-    float* imageIter = image->data;
+    float* imageIter = image_getData(image);
     float* kernelIter = kernel;
 
-    Image_t* processed = new_image(processedWidth, image->height - 2, image->channels);
-    float* processedIter = processed->data;
+    Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
+    float* processedIter = image_getData(processed);
 
 #pragma omp parallel for default(none) \
     shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth) \
@@ -318,45 +355,51 @@ Image_t* convolutionOMPNaive(Image_t* image, float* kernel, int nThreads){
     return processed;
 }
 
-Image_t* convolutionOMPNaiveUnrollingChannels(Image_t* image, float* kernel, int nThreads){
-    float imagePixel1;
-    float imagePixel2;
-    float imagePixel3;
+
+/*
+ * Parallel convolution implementation with openMP and loop unrolling channels only
+ * It works only for images with three channels and any kernels
+ * */
+Image_t* convolutionOMPUnrollingChannels(Image_t* image, float* kernel, int nThreads){
     float kernelValue;
     int xOffset;
     int yOffset;
 
-    int width = image->width;
-    int height = image->height;
-    int channels = image->channels;
-    int processedWidth = image->width - 2;
+    int width = image_getWidth(image);
+    int height = image_getHeight(image);
+    int channels = image_getChannels(image);
+    int processedWidth = width - PIXEL_LOST_PER_AXIS;
 
-    float* imageIter = image->data;
+    if (channels != RGB_CHANNELS) {
+        std::cerr << "This convolution implementation works only with images with three channels " << std::endl;
+        return nullptr;
+    }
+
+    float* imageIter = image_getData(image);
     float* kernelIter = kernel;
 
-    Image_t* processed = new_image(processedWidth, image->height - 2, image->channels);
-    float* processedIter = processed->data;
+    Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, RGB_CHANNELS);
+    float* processedIter = image_getData(processed);
 
 #pragma omp parallel for default(none) \
     shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth) \
-    firstprivate(xOffset, yOffset, imagePixel1, imagePixel2, imagePixel3, kernelValue) \
+    firstprivate(xOffset, yOffset, kernelValue) \
     collapse(2) schedule(static) num_threads(nThreads)
     for (int i = 1; i < height - 1; i++) {
         for (int j = 1; j < width - 1; j++) {
             processedIter[((i-1) * processedWidth + (j-1)) * channels] = 0;
             processedIter[((i-1) * processedWidth + (j-1)) * channels + 1] = 0;
             processedIter[((i-1) * processedWidth + (j-1)) * channels + 2] = 0;
+
             for (int y = -KERNEL_RADIUS; y <= KERNEL_RADIUS; y++) {
                 for (int x = -KERNEL_RADIUS; x <= KERNEL_RADIUS; x++) {
                     xOffset = j + x;
                     yOffset = i + y;
                     kernelValue = kernelIter[(y + KERNEL_RADIUS) * KERNEL_WIDTH + x + KERNEL_RADIUS];
-                    imagePixel1 = imageIter[(yOffset * width + xOffset) * channels];
-                    processedIter[((i-1) * processedWidth + (j-1)) * channels] += (imagePixel1 * kernelValue);
-                    imagePixel2 = imageIter[(yOffset * width + xOffset) * channels + 1];
-                    processedIter[((i-1) * processedWidth + (j-1)) * channels + 1] += (imagePixel2 * kernelValue);
-                    imagePixel3 = imageIter[(yOffset * width + xOffset) * channels + 2];
-                    processedIter[((i-1) * processedWidth + (j-1)) * channels + 2] += (imagePixel3 * kernelValue);
+
+                    processedIter[((i-1) * processedWidth + (j-1)) * channels] += (imageIter[(yOffset * width + xOffset) * channels] * kernelValue);
+                    processedIter[((i-1) * processedWidth + (j-1)) * channels + 1] += (imageIter[(yOffset * width + xOffset) * channels + 1] * kernelValue);
+                    processedIter[((i-1) * processedWidth + (j-1)) * channels + 2] += (imageIter[(yOffset * width + xOffset) * channels + 2] * kernelValue);
                 }
             }
         }
@@ -365,50 +408,55 @@ Image_t* convolutionOMPNaiveUnrollingChannels(Image_t* image, float* kernel, int
     return processed;
 }
 
+
+/*
+ * Parallel convolution implementation with openMP and SoA data layout
+ * It works only for images with three channels and any kernels
+ * */
 ImageSoA_t* convolutionOMPNaiveSoA(ImageSoA_t* image, float* kernel, int nThreads){
-    float imageRPixel;
-    float imageGPixel;
-    float imageBPixel;
     float kernelValue;
     int xOffset;
     int yOffset;
 
-    int width = image->width;
-    int height = image->height;
-    int processedWidth = image->width - 2;
+    int width = image_getWidth(image);
+    int height = image_getHeight(image);
+    int processedWidth = width - PIXEL_LOST_PER_AXIS;
 
-    float* imageRIter = image->r;
-    float* imageGIter = image->g;
-    float* imageBIter = image->b;
+    if (image_getChannels(image) != RGB_CHANNELS) {
+        std::cerr << "This convolution implementation works only with images with three channels " << std::endl;
+        return nullptr;
+    }
+
+    float* imageRIter = image_getR(image);
+    float* imageGIter = image_getG(image);
+    float* imageBIter = image_getB(image);
     float* kernelIter = kernel;
 
-    ImageSoA_t* processed = new_imageSoA(processedWidth, image->height - 2);
-    float* processedRIter = processed->r;
-    float* processedGIter = processed->g;
-    float* processedBIter = processed->b;
+    ImageSoA_t* processed = new_imageSoA(processedWidth, height - PIXEL_LOST_PER_AXIS, RGB_CHANNELS);
+    float* processedRIter = image_getR(processed);
+    float* processedGIter = image_getG(processed);
+    float* processedBIter = image_getB(processed);
 
 #pragma omp parallel for default(none) \
     shared(width, height, imageRIter, imageGIter, imageBIter, \
     kernelIter, processedRIter, processedGIter, processedBIter, processedWidth) \
-    firstprivate(xOffset, yOffset, imageRPixel, imageGPixel, imageBPixel, \
-    kernelValue) \
+    firstprivate(xOffset, yOffset, kernelValue) \
     collapse(2) schedule(static) num_threads(nThreads)
     for (int i = 1; i < height - 1; i++) {
         for (int j = 1; j < width - 1; j++) {
             processedRIter[((i-1) * processedWidth + (j-1))] = 0;
             processedGIter[((i-1) * processedWidth + (j-1))] = 0;
             processedBIter[((i-1) * processedWidth + (j-1))] = 0;
+
             for (int y = -KERNEL_RADIUS; y <= KERNEL_RADIUS; y++) {
                 for (int x = -KERNEL_RADIUS; x <= KERNEL_RADIUS; x++) {
                     xOffset = (j) + x;
                     yOffset = (i) + y;
-                    imageRPixel = imageRIter[(yOffset * width + xOffset)];
-                    imageGPixel = imageGIter[(yOffset * width + xOffset)];
-                    imageBPixel = imageBIter[(yOffset * width + xOffset)];
                     kernelValue = kernelIter[(y + KERNEL_RADIUS) * KERNEL_WIDTH + x + KERNEL_RADIUS];
-                    processedRIter[((i-1) * processedWidth + (j-1))] += (imageRPixel * kernelValue);
-                    processedBIter[((i-1) * processedWidth + (j-1))] += (imageGPixel * kernelValue);
-                    processedGIter[((i-1) * processedWidth + (j-1))] += (imageBPixel * kernelValue);
+
+                    processedRIter[((i-1) * processedWidth + (j-1))] += (imageRIter[(yOffset * width + xOffset)] * kernelValue);
+                    processedBIter[((i-1) * processedWidth + (j-1))] += (imageGIter[(yOffset * width + xOffset)] * kernelValue);
+                    processedGIter[((i-1) * processedWidth + (j-1))] += (imageBIter[(yOffset * width + xOffset)] * kernelValue);
                 }
             }
         }
@@ -417,17 +465,21 @@ ImageSoA_t* convolutionOMPNaiveSoA(ImageSoA_t* image, float* kernel, int nThread
     return processed;
 }
 
+/*
+ * Parallel convolution implementation with openMP and loop unrolling kernel only
+ * It works for images with any number of channels and 3x3 kernels
+ * */
 Image_t* convolutionOMPUnrollingSIMDWidth(Image_t* image, float* kernel, int nThreads){
-    int width = image->width;
-    int height = image->height;
-    int channels = image->channels;
-    int processedWidth = image->width - 2;
+    int width = image_getWidth(image);
+    int height = image_getHeight(image);
+    int channels = image_getChannels(image);
+    int processedWidth = width - PIXEL_LOST_PER_AXIS;
 
-    float* imageIter = image->data;
+    float* imageIter = image_getData(image);
     float* kernelIter = kernel;
 
-    Image_t* processed = new_image(processedWidth, image->height - 2, image->channels);
-    float* processedIter = processed->data;
+    Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
+    float* processedIter = image_getData(processed);
 
 #pragma omp parallel for default(none) \
     shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth) \
@@ -452,20 +504,29 @@ Image_t* convolutionOMPUnrollingSIMDWidth(Image_t* image, float* kernel, int nTh
     return processed;
 }
 
+/*
+ * Parallel convolution implementation with openMP, loop unrolling and SoA data layout
+ * It works for images with three channels and 3x3 kernels
+ * */
 ImageSoA_t* convolutionOMPUnrollingSIMDWidthSoA(ImageSoA_t* image, float* kernel, int nThreads){
-    int width = image->width;
-    int height = image->height;
-    int processedWidth = image->width - 2;
+    int width = image_getWidth(image);
+    int height = image_getHeight(image);
+    int processedWidth = width - PIXEL_LOST_PER_AXIS;
 
-    float* imageRIter = image->r;
-    float* imageGIter = image->g;
-    float* imageBIter = image->b;
+    if (image_getChannels(image) != RGB_CHANNELS) {
+        std::cerr << "This convolution implementation works only with images with three channels " << std::endl;
+        return nullptr;
+    }
+
+    float* imageRIter = image_getR(image);
+    float* imageGIter = image_getG(image);
+    float* imageBIter = image_getB(image);
     float* kernelIter = kernel;
 
-    ImageSoA_t* processed = new_imageSoA(processedWidth, image->height - 2);
-    float* processedRIter = processed->r;
-    float* processedGIter = processed->g;
-    float* processedBIter = processed->b;
+    ImageSoA_t* processed = new_imageSoA(processedWidth, height - PIXEL_LOST_PER_AXIS, RGB_CHANNELS);
+    float* processedRIter = image_getR(processed);
+    float* processedGIter = image_getG(processed);
+    float* processedBIter = image_getB(processed);
 
 #pragma omp parallel for default(none) \
     shared(width, height, imageRIter, imageGIter, imageBIter, \
@@ -512,17 +573,26 @@ ImageSoA_t* convolutionOMPUnrollingSIMDWidthSoA(ImageSoA_t* image, float* kernel
     return processed;
 }
 
+/*
+ * Parallel convolution implementation with openMP and loop unrolling
+ * It works for images with three channels and 3x3 kernels
+ * */
 Image_t* convolutionOMPUnrolling(Image_t* image, float* kernel, int nThreads){
-    int width = image->width;
-    int height = image->height;
-    int channels = image->channels;
-    int processedWidth = image->width - 2;
+    int width = image_getWidth(image);
+    int height = image_getHeight(image);
+    int channels = image_getChannels(image);
+    int processedWidth = width - PIXEL_LOST_PER_AXIS;
 
-    float* imageIter = image->data;
+    if (channels != RGB_CHANNELS) {
+        std::cerr << "This convolution implementation works only with images with three channels " << std::endl;
+        return nullptr;
+    }
+
+    float* imageIter = image_getData(image);
     float* kernelIter = kernel;
 
-    Image_t* processed = new_image(processedWidth, image->height - 2, image->channels);
-    float* processedIter = processed->data;
+    Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, RGB_CHANNELS);
+    float* processedIter = image_getData(processed);
 
 #pragma omp parallel for default(none) \
     shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth) \
@@ -567,17 +637,22 @@ Image_t* convolutionOMPUnrolling(Image_t* image, float* kernel, int nThreads){
     return processed;
 }
 
-Image_t* convolutionOMPUnrollingKernel(Image_t* image, float* kernel, int nThreads){
-    int width = image->width;
-    int height = image->height;
-    int channels = image->channels;
-    int processedWidth = image->width - 2;
 
-    float* imageIter = image->data;
+/*
+ * Parallel convolution implementation with openMP and loop unrolling kernel only
+ * It works for images with any number of channels and 3x3 kernels
+ * */
+Image_t* convolutionOMPUnrollingKernel(Image_t* image, float* kernel, int nThreads){
+    int width = image_getWidth(image);
+    int height = image_getHeight(image);
+    int channels = image_getChannels(image);
+    int processedWidth = width - PIXEL_LOST_PER_AXIS;
+
+    float* imageIter = image_getData(image);
     float* kernelIter = kernel;
 
-    Image_t* processed = new_image(processedWidth, image->height - 2, image->channels);
-    float* processedIter = processed->data;
+    Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
+    float* processedIter = image_getData(processed);
 
 #pragma omp parallel for default(none) \
     shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth) \
@@ -602,20 +677,29 @@ Image_t* convolutionOMPUnrollingKernel(Image_t* image, float* kernel, int nThrea
     return processed;
 }
 
+/*
+ * Parallel convolution implementation with openMP, loop unrolling and SoA data layout
+ * It works for images with three channels and 3x3 kernels
+ * */
 ImageSoA_t* convolutionOMPUnrollingSoA(ImageSoA_t* image, float* kernel, int nThreads){
-    int width = image->width;
-    int height = image->height;
-    int processedWidth = image->width - 2;
+    int width = image_getWidth(image);
+    int height = image_getHeight(image);
+    int processedWidth = width - PIXEL_LOST_PER_AXIS;
 
-    float* imageRIter = image->r;
-    float* imageGIter = image->g;
-    float* imageBIter = image->b;
+    if (image_getChannels(image) != RGB_CHANNELS) {
+        std::cerr << "This convolution implementation works only with images with three channels " << std::endl;
+        return nullptr;
+    }
+
+    float* imageRIter = image_getR(image);
+    float* imageGIter = image_getG(image);
+    float* imageBIter = image_getB(image);
     float* kernelIter = kernel;
 
-    ImageSoA_t* processed = new_imageSoA(processedWidth, image->height - 2);
-    float* processedRIter = processed->r;
-    float* processedGIter = processed->g;
-    float* processedBIter = processed->b;
+    ImageSoA_t* processed = new_imageSoA(processedWidth, height - PIXEL_LOST_PER_AXIS, RGB_CHANNELS);
+    float* processedRIter = image_getR(processed);
+    float* processedGIter = image_getG(processed);
+    float* processedBIter = image_getB(processed);
 
 #pragma omp parallel for default(none) \
     shared(width, height, imageRIter, imageGIter, imageBIter, \
@@ -661,17 +745,21 @@ ImageSoA_t* convolutionOMPUnrollingSoA(ImageSoA_t* image, float* kernel, int nTh
     return processed;
 }
 
+/*
+ * Parallel convolution implementation with openMP and loop unrolling kernel only
+ * It works for images with any number of channels and 3x3 kernels
+ * */
 Image_t* convolutionOMPUnrollingSIMDChannels(Image_t* image, float* kernel, int nThreads){
-    int width = image->width;
-    int height = image->height;
-    int channels = image->channels;
-    int processedWidth = image->width - 2;
+    int width = image_getWidth(image);
+    int height = image_getHeight(image);
+    int channels = image_getChannels(image);
+    int processedWidth = width - PIXEL_LOST_PER_AXIS;
 
-    float* imageIter = image->data;
+    float* imageIter = image_getData(image);
     float* kernelIter = kernel;
 
-    Image_t* processed = new_image(processedWidth, image->height - 2, image->channels);
-    float* processedIter = processed->data;
+    Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
+    float* processedIter = image_getData(processed);
 
 #pragma omp parallel for default(none) \
     shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth) \
@@ -696,17 +784,21 @@ Image_t* convolutionOMPUnrollingSIMDChannels(Image_t* image, float* kernel, int 
     return processed;
 }
 
+/*
+ * Parallel convolution implementation with openMP and loop unrolling kernel only
+ * It works for images with any number of channels and 3x3 kernels
+ * */
 Image_t* convolutionOMPUnrollingDoubleSIMD(Image_t* image, float* kernel, int nThreads){
-    int width = image->width;
-    int height = image->height;
-    int channels = image->channels;
-    int processedWidth = image->width - 2;
+    int width = image_getWidth(image);
+    int height = image_getHeight(image);
+    int channels = image_getChannels(image);
+    int processedWidth = width - PIXEL_LOST_PER_AXIS;
 
-    float* imageIter = image->data;
+    float* imageIter = image_getData(image);
     float* kernelIter = kernel;
 
-    Image_t* processed = new_image(processedWidth, image->height - 2, image->channels);
-    float* processedIter = processed->data;
+    Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
+    float* processedIter = image_getData(processed);
 
 #pragma omp parallel for default(none) \
     shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth) \
@@ -732,17 +824,21 @@ Image_t* convolutionOMPUnrollingDoubleSIMD(Image_t* image, float* kernel, int nT
     return processed;
 }
 
+/*
+ * Parallel convolution implementation with openMP and loop unrolling kernel only
+ * It works for images with any number of channels and 3x3 kernels
+ * */
 Image_t* convolutionOMPUnrollingSIMDCollapse(Image_t* image, float* kernel, int nThreads){
-    int width = image->width;
-    int height = image->height;
-    int channels = image->channels;
-    int processedWidth = image->width - 2;
+    int width = image_getWidth(image);
+    int height = image_getHeight(image);
+    int channels = image_getChannels(image);
+    int processedWidth = width - PIXEL_LOST_PER_AXIS;
 
-    float* imageIter = image->data;
+    float* imageIter = image_getData(image);
     float* kernelIter = kernel;
 
-    Image_t* processed = new_image(processedWidth, image->height - 2, image->channels);
-    float* processedIter = processed->data;
+    Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
+    float* processedIter = image_getData(processed);
 
 #pragma omp parallel for default(none) \
     shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth) \
@@ -767,17 +863,21 @@ Image_t* convolutionOMPUnrollingSIMDCollapse(Image_t* image, float* kernel, int 
     return processed;
 }
 
+/*
+ * Parallel convolution implementation with openMP and loop unrolling kernel only
+ * It works for images with any number of channels and 3x3 kernels
+ * */
 Image_t* convolutionOMPUnrollingParallelForSIMD(Image_t* image, float* kernel, int nThreads){
-    int width = image->width;
-    int height = image->height;
-    int channels = image->channels;
-    int processedWidth = image->width - 2;
+    int width = image_getWidth(image);
+    int height = image_getHeight(image);
+    int channels = image_getChannels(image);
+    int processedWidth = width - PIXEL_LOST_PER_AXIS;
 
-    float* imageIter = image->data;
+    float* imageIter = image_getData(image);
     float* kernelIter = kernel;
 
-    Image_t* processed = new_image(processedWidth, image->height - 2, image->channels);
-    float* processedIter = processed->data;
+    Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
+    float* processedIter = image_getData(processed);
 
 #pragma omp parallel for simd default(none) \
     shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth) \
@@ -847,7 +947,7 @@ ImageSoA_t* convolutionOMPUnrollingSIMDWidthRestrictSoA(ImageSoA_t* image, float
     float* __restrict imageBIter = image->b;
     float* __restrict kernelIter = kernel;
 
-    ImageSoA_t* processed = new_imageSoA(processedWidth, image->height - 2);
+    ImageSoA_t* processed = new_imageSoA(processedWidth, image->height - 2, 3);
     float* __restrict processedRIter = processed->r;
     float* __restrict processedGIter = processed->g;
     float* __restrict processedBIter = processed->b;

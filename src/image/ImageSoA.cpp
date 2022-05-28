@@ -5,13 +5,14 @@
 #include "ImageSoA.h"
 #include <iostream>
 
-ImageSoA_t* new_ImageSoA1(int width, int height, float *r, float *g, float *b) {
+ImageSoA_t* new_ImageSoA(int width, int height, int channels, float *r, float *g, float *b) {
     ImageSoA_t* img;
 
     img = (ImageSoA_t*) malloc(sizeof(ImageSoA_t));
 
     image_setWidth(img, width);
     image_setHeight(img, height);
+    image_setChannels(img, channels);
 
     image_setR(img, r);
     image_setG(img, g);
@@ -19,11 +20,16 @@ ImageSoA_t* new_ImageSoA1(int width, int height, float *r, float *g, float *b) {
     return img;
 }
 
-ImageSoA_t* new_imageSoA(int width, int height) {
+ImageSoA_t* new_imageSoA(int width, int height, int channels) {
+    if (channels != 3) {
+        std::cerr << "This data struct works only for image with three channels" << std::endl;
+        return NULL;
+    }
+
     float *r = (float*) malloc(sizeof(float) * width * height);
     float *g = (float*) malloc(sizeof(float) * width * height);
     float *b = (float*) malloc(sizeof(float) * width * height);
-    return new_ImageSoA1(width, height, r, g, b);
+    return new_ImageSoA(width, height, channels, r, g, b);
 }
 
 void image_delete(ImageSoA_t* img) {

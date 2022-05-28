@@ -7,13 +7,13 @@
 
 #define IMPORT_PATH "../resources/source/"
 #define EXPORT_PATH "../resources/results/"
-#define IMAGE "deer480p"
+#define IMAGE "lake"
 
 #define SEQUENTIAL true
 #define PARALLEL false
-#define UNROLLING false
+#define UNROLLING true
 #define SOA false
-#define ITER 1
+#define ITER 10
 #define N_THREADS 2
 
 
@@ -43,7 +43,8 @@ int main() {
                 log.append("with unrolling ");
                 for (int i = 0; i < ITER; i++) {
                     startTime = std::chrono::high_resolution_clock::now();
-                    Image_t *result = convolutionUnrolling(image, kernel);
+                    Image_t *result = convolutionUnrollingChannels(image, kernel);
+//                    Image_t *result = convolutionUnrolling(image, kernel);
                     endTime = std::chrono::high_resolution_clock::now();
                     time += std::chrono::duration_cast<std::chrono::duration<float>>(endTime - startTime).count();
                     if (i != ITER - 1)
@@ -96,7 +97,7 @@ int main() {
                 for (int i = 0; i < ITER; i++) {
                     startTime = std::chrono::high_resolution_clock::now();
 //                    Image_t *result = convolutionOMPNaive(image, kernel, N_THREADS);
-                    Image_t *result = convolutionOMPNaiveUnrollingChannels(image, kernel, N_THREADS);
+                    Image_t *result = convolutionOMPUnrollingChannels(image, kernel, N_THREADS);
                     endTime = std::chrono::high_resolution_clock::now();
                     time += std::chrono::duration_cast<std::chrono::duration<float>>(endTime - startTime).count();
                     if (i != ITER - 1)
