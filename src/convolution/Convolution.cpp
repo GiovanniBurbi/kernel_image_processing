@@ -15,11 +15,6 @@
  * It works for images with any number of channels and any kernels
  * */
  Image_t* convolution(Image_t* image, float* kernel){
-    float imagePixel;
-    float kernelValue;
-    int xOffset;
-    int yOffset;
-
     int width = image_getWidth(image);
     int height = image_getHeight(image);
     int channels = image_getChannels(image);
@@ -31,20 +26,18 @@
     Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
     float* processedIter = image_getData(processed);
 
-    for (int i = 1; i < height-1; i++) {
-        for (int j = 1; j < width-1; j++) {
+    float accum;
+    int offset = PIXEL_LOST_PER_AXIS / 2;
+    for (int i = offset; i < height - offset; i++) {
+        for (int j = 1; j < width - offset; j++) {
             for (int k = 0; k < channels; k++) {
-                processedIter[((i - 1) * processedWidth + (j - 1)) * channels + k] = 0;
+                accum = 0;
                 for (int y = -KERNEL_RADIUS; y <= KERNEL_RADIUS; y++) {
                     for (int x = -KERNEL_RADIUS; x <= KERNEL_RADIUS; x++) {
-                        xOffset = j + x;
-                        yOffset = i + y;
-                        imagePixel = imageIter[(yOffset * width + xOffset) * channels + k];
-                        kernelValue = kernelIter[(y + KERNEL_RADIUS) * KERNEL_WIDTH + x + KERNEL_RADIUS];
-                        processedIter[((i - 1) * processedWidth + (j - 1)) * channels + k] += (imagePixel * kernelValue);
-
+                        accum += (imageIter[((i + y) * width + j + x) * channels + k] * kernelIter[(y + KERNEL_RADIUS) * KERNEL_WIDTH + x + KERNEL_RADIUS]);
                     }
                 }
+                processedIter[((i - 1) * processedWidth + (j - 1)) * channels + k] = accum;
             }
         }
     }
@@ -57,8 +50,6 @@
  * */
 ImageSoA_t* convolutionSoA(ImageSoA_t* image, float* kernel){
     float kernelValue;
-    int xOffset;
-    int yOffset;
 
     int width = image_getWidth(image);
     int height = image_getHeight(image);
@@ -79,24 +70,31 @@ ImageSoA_t* convolutionSoA(ImageSoA_t* image, float* kernel){
     float* processedGIter = image_getG(processed);
     float* processedBIter = image_getB(processed);
 
-    for (int i = 1; i < height-1; i++) {
-        for (int j = 1; j < width-1; j++) {
-            processedRIter[(i-1) * processedWidth + (j-1)] = 0;
-            processedGIter[(i-1) * processedWidth + (j-1)] = 0;
-            processedBIter[(i-1) * processedWidth + (j-1)] = 0;
+    float accumR;
+    float accumG;
+    float accumB;
+
+    int offset = PIXEL_LOST_PER_AXIS / 2;
+
+    for (int i = offset; i < height - offset; i++) {
+        for (int j = offset; j < width - offset; j++) {
+            accumR = 0;
+            accumG = 0;
+            accumB = 0;
 
             for (int y = -KERNEL_RADIUS; y <= KERNEL_RADIUS; y++) {
                 for (int x = -KERNEL_RADIUS; x <= KERNEL_RADIUS; x++) {
-                    xOffset = j + x;
-                    yOffset = i + y;
-
                     kernelValue = kernelIter[(y + KERNEL_RADIUS) * KERNEL_WIDTH + x + KERNEL_RADIUS];
 
-                    processedRIter[((i - 1) * processedWidth + (j - 1))] += (imageRIter[(yOffset * width + xOffset)] * kernelValue);
-                    processedGIter[((i - 1) * processedWidth + (j - 1))] += (imageGIter[(yOffset * width + xOffset)] * kernelValue);
-                    processedBIter[((i - 1) * processedWidth + (j - 1))] += (imageBIter[(yOffset * width + xOffset)] * kernelValue);
+                    accumR += kernelValue * imageRIter[((i + y) * width + (j+x))];
+                    accumG += kernelValue * imageGIter[((i + y) * width + (j+x))];
+                    accumB += kernelValue * imageBIter[((i + y) * width + (j+x))];
                 }
             }
+
+            processedRIter[((i - 1) * processedWidth + (j - 1))] = accumR;
+            processedGIter[((i - 1) * processedWidth + (j - 1))] = accumG;
+            processedBIter[((i - 1) * processedWidth + (j - 1))] = accumB;
         }
     }
     return processed;
@@ -123,8 +121,10 @@ Image_t* convolutionUnrolling(Image_t* image, float* kernel){
     Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, RGB_CHANNELS);
     float* processedIter = image_getData(processed);
 
-    for (int i = 1; i < height - 1; i++) {
-        for (int j = 1; j < width - 1; j++) {
+    int offset = PIXEL_LOST_PER_AXIS / 2;
+
+    for (int i = offset; i < height - offset; i++) {
+        for (int j = offset; j < width - offset; j++) {
             processedIter[((i-1) * processedWidth + (j-1)) * channels] =
                     imageIter[((i-1) * width + j-1) * channels] * kernelIter[0] +
                     imageIter[((i-1) * width + j) * channels] * kernelIter[1] +
@@ -179,8 +179,12 @@ Image_t* convolutionUnrolling(Image_t* image, float* kernel){
     Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
     float* processedIter = image_getData(processed);
 
-    for (int i = 1; i < height - 1; i++) {
-        for (int j = 1; j < width - 1; j++) {
+    int offset = PIXEL_LOST_PER_AXIS / 2;
+
+    float accum;
+
+    for (int i = offset; i < height - offset; i++) {
+        for (int j = offset; j < width - offset; j++) {
             for (int k = 0; k < channels; k++) {
                 processedIter[((i-1) * processedWidth + (j-1)) * channels + k] =
                         imageIter[((i-1) * width + j-1) * channels + k] * kernelIter[0] +
@@ -205,8 +209,6 @@ Image_t* convolutionUnrolling(Image_t* image, float* kernel){
  * */
 Image_t* convolutionUnrollingChannels(Image_t* image, float* kernel){
     float kernelValue;
-    int xOffset;
-    int yOffset;
 
     int width = image_getWidth(image);
     int height = image_getHeight(image);
@@ -224,24 +226,31 @@ Image_t* convolutionUnrollingChannels(Image_t* image, float* kernel){
     Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, RGB_CHANNELS);
     float* processedIter = image_getData(processed);
 
-    for (int i = 1; i < height-1; i++) {
-        for (int j = 1; j < width-1; j++) {
-            processedIter[((i - 1) * processedWidth + (j - 1)) * channels ] = 0;
-            processedIter[((i - 1) * processedWidth + (j - 1)) * channels + 1] = 0;
-            processedIter[((i - 1) * processedWidth + (j - 1)) * channels + 2] = 0;
+    float accumR;
+    float accumG;
+    float accumB;
+
+    int offset = PIXEL_LOST_PER_AXIS / 2;
+
+    for (int i = offset; i < height - offset; i++) {
+        for (int j = offset; j < width - offset; j++) {
+            accumR = 0;
+            accumG = 0;
+            accumB = 0;
 
             for (int y = -KERNEL_RADIUS; y <= KERNEL_RADIUS; y++) {
                 for (int x = -KERNEL_RADIUS; x <= KERNEL_RADIUS; x++) {
-                    xOffset = j + x;
-                    yOffset = i + y;
-
                     kernelValue = kernelIter[(y + KERNEL_RADIUS) * KERNEL_WIDTH + x + KERNEL_RADIUS];
-                    processedIter[((i - 1) * processedWidth + (j - 1)) * channels] += (imageIter[(yOffset * width + xOffset) * channels] * kernelValue);
-                    processedIter[((i - 1) * processedWidth + (j - 1)) * channels + 1] += (imageIter[(yOffset * width + xOffset) * channels + 1] * kernelValue);
-                    processedIter[((i - 1) * processedWidth + (j - 1)) * channels + 2] += (imageIter[(yOffset * width + xOffset) * channels + 2] * kernelValue);
 
+                    accumR += imageIter[((i + y) * width + j + x) * channels] * kernelValue;
+                    accumG += imageIter[((i + y) * width + j + x) * channels + 1] * kernelValue;
+                    accumB += imageIter[((i + y) * width + j + x) * channels + 2] * kernelValue;
                 }
             }
+
+            processedIter[((i - 1) * processedWidth + (j - 1)) * channels] = accumR;
+            processedIter[((i - 1) * processedWidth + (j - 1)) * channels + 1] = accumG;
+            processedIter[((i - 1) * processedWidth + (j - 1)) * channels + 2] = accumB;
         }
     }
     return processed;
@@ -271,8 +280,10 @@ ImageSoA_t* convolutionUnrollingSoA(ImageSoA_t* image, float* kernel){
     float* processedGIter = image_getG(processed);
     float* processedBIter = image_getB(processed);
 
-    for (int i = 1; i < height-1; i++) {
-        for (int j = 1; j < width-1; j++) {
+    int offset = PIXEL_LOST_PER_AXIS / 2;
+
+    for (int i = offset; i < height - offset; i++) {
+        for (int j = offset; j < width - offset; j++) {
             processedRIter[((i-1) * processedWidth + (j-1))] =
                     imageRIter[((i-1) * width + j-1)] * kernelIter[0] +
                     imageRIter[((i-1) * width + j)] * kernelIter[1] +
@@ -315,11 +326,6 @@ ImageSoA_t* convolutionUnrollingSoA(ImageSoA_t* image, float* kernel){
  * It works for images with any number of channels and any kernels
  * */
 Image_t* convolutionOMPNaive(Image_t* image, float* kernel, int nThreads){
-    float imagePixel;
-    float kernelValue;
-    int xOffset;
-    int yOffset;
-
     int width = image_getWidth(image);
     int height = image_getHeight(image);
     int channels = image_getChannels(image);
@@ -331,23 +337,25 @@ Image_t* convolutionOMPNaive(Image_t* image, float* kernel, int nThreads){
     Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
     float* processedIter = image_getData(processed);
 
+    float accum;
+
+    int offset = PIXEL_LOST_PER_AXIS / 2;
+
 #pragma omp parallel for default(none) \
-    shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth) \
-    firstprivate(xOffset, yOffset, imagePixel, kernelValue) \
-    collapse(2) schedule(static) num_threads(nThreads)
-    for (int i = 1; i < height - 1; i++) {
-        for (int j = 1; j < width - 1; j++) {
+    shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth, offset) \
+    firstprivate(accum) collapse(2) schedule(static) num_threads(nThreads)
+    for (int i = offset; i < height - offset; i++) {
+        for (int j = offset; j < width - offset; j++) {
             for (int k = 0; k < channels; k++) {
-                processedIter[((i-1) * processedWidth + (j-1)) * channels + k] = 0;
+                accum = 0;
+
                 for (int y = -KERNEL_RADIUS; y <= KERNEL_RADIUS; y++) {
                     for (int x = -KERNEL_RADIUS; x <= KERNEL_RADIUS; x++) {
-                        xOffset = (j) + x;
-                        yOffset = (i) + y;
-                        imagePixel = imageIter[(yOffset * width + xOffset) * channels + k];
-                        kernelValue = kernelIter[(y + KERNEL_RADIUS) * KERNEL_WIDTH + x + KERNEL_RADIUS];
-                        processedIter[((i-1) * processedWidth + (j-1)) * channels + k] += (imagePixel * kernelValue);
+                        accum += imageIter[((i + y) * width + j + x) * channels + k] * kernelIter[(y + KERNEL_RADIUS) * KERNEL_WIDTH + x + KERNEL_RADIUS];
                     }
                 }
+
+                processedIter[((i-1) * processedWidth + (j-1)) * channels + k] = accum;
             }
         }
     }
@@ -362,8 +370,6 @@ Image_t* convolutionOMPNaive(Image_t* image, float* kernel, int nThreads){
  * */
 Image_t* convolutionOMPUnrollingChannels(Image_t* image, float* kernel, int nThreads){
     float kernelValue;
-    int xOffset;
-    int yOffset;
 
     int width = image_getWidth(image);
     int height = image_getHeight(image);
@@ -381,27 +387,35 @@ Image_t* convolutionOMPUnrollingChannels(Image_t* image, float* kernel, int nThr
     Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, RGB_CHANNELS);
     float* processedIter = image_getData(processed);
 
+    float accumR;
+    float accumG;
+    float accumB;
+
+    int offset = PIXEL_LOST_PER_AXIS / 2;
+
 #pragma omp parallel for default(none) \
-    shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth) \
-    firstprivate(xOffset, yOffset, kernelValue) \
+    shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth, offset) \
+    firstprivate(accumR, accumG, accumB, kernelValue) \
     collapse(2) schedule(static) num_threads(nThreads)
-    for (int i = 1; i < height - 1; i++) {
-        for (int j = 1; j < width - 1; j++) {
-            processedIter[((i-1) * processedWidth + (j-1)) * channels] = 0;
-            processedIter[((i-1) * processedWidth + (j-1)) * channels + 1] = 0;
-            processedIter[((i-1) * processedWidth + (j-1)) * channels + 2] = 0;
+    for (int i = offset; i < height - offset; i++) {
+        for (int j = offset; j < width - offset; j++) {
+            accumR = 0;
+            accumG = 0;
+            accumB = 0;
 
             for (int y = -KERNEL_RADIUS; y <= KERNEL_RADIUS; y++) {
                 for (int x = -KERNEL_RADIUS; x <= KERNEL_RADIUS; x++) {
-                    xOffset = j + x;
-                    yOffset = i + y;
                     kernelValue = kernelIter[(y + KERNEL_RADIUS) * KERNEL_WIDTH + x + KERNEL_RADIUS];
 
-                    processedIter[((i-1) * processedWidth + (j-1)) * channels] += (imageIter[(yOffset * width + xOffset) * channels] * kernelValue);
-                    processedIter[((i-1) * processedWidth + (j-1)) * channels + 1] += (imageIter[(yOffset * width + xOffset) * channels + 1] * kernelValue);
-                    processedIter[((i-1) * processedWidth + (j-1)) * channels + 2] += (imageIter[(yOffset * width + xOffset) * channels + 2] * kernelValue);
+                    accumR += imageIter[((i + y) * width + j + x) * channels] * kernelValue;
+                    accumG += imageIter[((i + y) * width + j + x) * channels + 1] * kernelValue;
+                    accumB += imageIter[((i + y) * width + j + x) * channels + 2] * kernelValue;
                 }
             }
+
+            processedIter[((i - 1) * processedWidth + (j - 1)) * channels] = accumR;
+            processedIter[((i - 1) * processedWidth + (j - 1)) * channels + 1] = accumG;
+            processedIter[((i - 1) * processedWidth + (j - 1)) * channels + 2] = accumB;
         }
     }
 
@@ -415,8 +429,6 @@ Image_t* convolutionOMPUnrollingChannels(Image_t* image, float* kernel, int nThr
  * */
 ImageSoA_t* convolutionOMPNaiveSoA(ImageSoA_t* image, float* kernel, int nThreads){
     float kernelValue;
-    int xOffset;
-    int yOffset;
 
     int width = image_getWidth(image);
     int height = image_getHeight(image);
@@ -437,28 +449,36 @@ ImageSoA_t* convolutionOMPNaiveSoA(ImageSoA_t* image, float* kernel, int nThread
     float* processedGIter = image_getG(processed);
     float* processedBIter = image_getB(processed);
 
+    float accumR;
+    float accumG;
+    float accumB;
+
+    int offset = PIXEL_LOST_PER_AXIS / 2;
+
 #pragma omp parallel for default(none) \
-    shared(width, height, imageRIter, imageGIter, imageBIter, \
+    shared(width, height, imageRIter, imageGIter, imageBIter, offset, \
     kernelIter, processedRIter, processedGIter, processedBIter, processedWidth) \
-    firstprivate(xOffset, yOffset, kernelValue) \
+    firstprivate(kernelValue, accumR, accumG, accumB) \
     collapse(2) schedule(static) num_threads(nThreads)
-    for (int i = 1; i < height - 1; i++) {
-        for (int j = 1; j < width - 1; j++) {
-            processedRIter[((i-1) * processedWidth + (j-1))] = 0;
-            processedGIter[((i-1) * processedWidth + (j-1))] = 0;
-            processedBIter[((i-1) * processedWidth + (j-1))] = 0;
+    for (int i = offset; i < height - offset; i++) {
+        for (int j = offset; j < width - offset; j++) {
+            accumR = 0;
+            accumG = 0;
+            accumB = 0;
 
             for (int y = -KERNEL_RADIUS; y <= KERNEL_RADIUS; y++) {
                 for (int x = -KERNEL_RADIUS; x <= KERNEL_RADIUS; x++) {
-                    xOffset = (j) + x;
-                    yOffset = (i) + y;
                     kernelValue = kernelIter[(y + KERNEL_RADIUS) * KERNEL_WIDTH + x + KERNEL_RADIUS];
 
-                    processedRIter[((i-1) * processedWidth + (j-1))] += (imageRIter[(yOffset * width + xOffset)] * kernelValue);
-                    processedBIter[((i-1) * processedWidth + (j-1))] += (imageGIter[(yOffset * width + xOffset)] * kernelValue);
-                    processedGIter[((i-1) * processedWidth + (j-1))] += (imageBIter[(yOffset * width + xOffset)] * kernelValue);
+                    accumR += imageRIter[((i + y) * width + j + x)] * kernelValue;
+                    accumG += imageGIter[((i + y) * width + j + x)] * kernelValue;
+                    accumB += imageBIter[((i + y) * width + j + x)] * kernelValue;
                 }
             }
+
+            processedRIter[((i-1) * processedWidth + (j-1))] = accumR;
+            processedGIter[((i-1) * processedWidth + (j-1))] = accumG;
+            processedBIter[((i-1) * processedWidth + (j-1))] = accumB;
         }
     }
 
@@ -481,12 +501,14 @@ Image_t* convolutionOMPUnrollingSIMDWidth(Image_t* image, float* kernel, int nTh
     Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
     float* processedIter = image_getData(processed);
 
+    int offset = PIXEL_LOST_PER_AXIS / 2;
+
 #pragma omp parallel for default(none) \
-    shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth) \
+    shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth, offset) \
     schedule(static) num_threads(nThreads)
-    for (int i = 1; i < height - 1; i++) {
+    for (int i = offset; i < height - offset; i++) {
 #pragma omp simd
-        for (int j = 1; j < width - 1; j++) {
+        for (int j = offset; j < width - offset; j++) {
             for (int k = 0; k < channels; k++) {
                 processedIter[((i-1) * processedWidth + (j-1)) * channels + k] = imageIter[((i-1) * width + j-1) * channels + k] * kernelIter[0] +
                         imageIter[((i-1) * width + j) * channels + k] * kernelIter[1] +
@@ -528,13 +550,15 @@ ImageSoA_t* convolutionOMPUnrollingSIMDWidthSoA(ImageSoA_t* image, float* kernel
     float* processedGIter = image_getG(processed);
     float* processedBIter = image_getB(processed);
 
+    int offset = PIXEL_LOST_PER_AXIS / 2;
+
 #pragma omp parallel for default(none) \
-    shared(width, height, imageRIter, imageGIter, imageBIter, \
+    shared(width, height, imageRIter, imageGIter, imageBIter, offset, \
     kernelIter, processedRIter, processedGIter, processedBIter, processedWidth) \
     schedule(static) num_threads(nThreads)
-    for (int i = 1; i < height - 1; i++) {
+    for (int i = offset; i < height - offset; i++) {
 #pragma omp simd
-        for (int j = 1; j < width - 1; j++) {
+        for (int j = offset; j < width - offset; j++) {
             processedRIter[((i-1) * processedWidth + (j-1))] =
                     imageRIter[((i-1) * width + j-1)] * kernelIter[0] +
                     imageRIter[((i-1) * width + j)] * kernelIter[1] +
@@ -594,11 +618,13 @@ Image_t* convolutionOMPUnrolling(Image_t* image, float* kernel, int nThreads){
     Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, RGB_CHANNELS);
     float* processedIter = image_getData(processed);
 
+    int offset = PIXEL_LOST_PER_AXIS / 2;
+
 #pragma omp parallel for default(none) \
-    shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth) \
+    shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth, offset) \
     collapse(2) schedule(static) num_threads(nThreads)
-    for (int i = 1; i < height - 1; i++) {
-        for (int j = 1; j < width - 1; j++) {
+    for (int i = offset; i < height - offset; i++) {
+        for (int j = offset; j < width - offset; j++) {
             processedIter[((i-1) * processedWidth + (j-1)) * channels] =
                     imageIter[((i-1) * width + j-1) * channels] * kernelIter[0] +
                     imageIter[((i-1) * width + j) * channels] * kernelIter[1] +
@@ -654,11 +680,13 @@ Image_t* convolutionOMPUnrollingKernel(Image_t* image, float* kernel, int nThrea
     Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
     float* processedIter = image_getData(processed);
 
+    int offset = PIXEL_LOST_PER_AXIS / 2;
+
 #pragma omp parallel for default(none) \
-    shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth) \
+    shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth, offset) \
     collapse(2) schedule(static) num_threads(nThreads)
-    for (int i = 1; i < height - 1; i++) {
-        for (int j = 1; j < width - 1; j++) {
+    for (int i = offset; i < height - offset; i++) {
+        for (int j = offset; j < width - offset; j++) {
             for (int k = 0; k < channels; k++) {
                 processedIter[((i-1) * processedWidth + (j-1)) * channels + k] =
                         imageIter[((i-1) * width + j-1) * channels + k] * kernelIter[0] +
@@ -701,12 +729,14 @@ ImageSoA_t* convolutionOMPUnrollingSoA(ImageSoA_t* image, float* kernel, int nTh
     float* processedGIter = image_getG(processed);
     float* processedBIter = image_getB(processed);
 
+    int offset = PIXEL_LOST_PER_AXIS / 2;
+
 #pragma omp parallel for default(none) \
-    shared(width, height, imageRIter, imageGIter, imageBIter, \
+    shared(width, height, imageRIter, imageGIter, imageBIter, offset, \
     kernelIter, processedRIter, processedGIter, processedBIter, processedWidth) \
     collapse(2) schedule(static) num_threads(nThreads)
-    for (int i = 1; i < height - 1; i++) {
-        for (int j = 1; j < width - 1; j++) {
+    for (int i = offset; i < height - offset; i++) {
+        for (int j = offset; j < width - offset; j++) {
             processedRIter[((i-1) * processedWidth + (j-1))] =
                     imageRIter[((i-1) * width + j-1)] * kernelIter[0] +
                     imageRIter[((i-1) * width + j)] * kernelIter[1] +
@@ -761,11 +791,13 @@ Image_t* convolutionOMPUnrollingSIMDChannels(Image_t* image, float* kernel, int 
     Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
     float* processedIter = image_getData(processed);
 
+    int offset = PIXEL_LOST_PER_AXIS / 2;
+
 #pragma omp parallel for default(none) \
-    shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth) \
+    shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth, offset) \
     collapse(2) schedule(static) num_threads(nThreads)
-    for (int i = 1; i < height - 1; i++) {
-        for (int j = 1; j < width - 1; j++) {
+    for (int i = offset; i < height - offset; i++) {
+        for (int j = offset; j < width - offset; j++) {
 #pragma omp simd
             for (int k = 0; k < channels; k++) {
                 processedIter[((i-1) * processedWidth + (j-1)) * channels + k] = imageIter[((i-1) * width + j-1) * channels + k] * kernelIter[0] +
@@ -800,12 +832,14 @@ Image_t* convolutionOMPUnrollingDoubleSIMD(Image_t* image, float* kernel, int nT
     Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
     float* processedIter = image_getData(processed);
 
+    int offset = PIXEL_LOST_PER_AXIS / 2;
+
 #pragma omp parallel for default(none) \
-    shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth) \
+    shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth, offset) \
     schedule(static) num_threads(nThreads)
-    for (int i = 1; i < height - 1; i++) {
+    for (int i = offset; i < height - offset; i++) {
 #pragma omp simd
-        for (int j = 1; j < width - 1; j++) {
+        for (int j = offset; j < width - offset; j++) {
 #pragma omp ordered simd
             for (int k = 0; k < channels; k++) {
                 processedIter[((i-1) * processedWidth + (j-1)) * channels + k] = imageIter[((i-1) * width + j-1) * channels + k] * kernelIter[0] +
@@ -840,12 +874,14 @@ Image_t* convolutionOMPUnrollingSIMDCollapse(Image_t* image, float* kernel, int 
     Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
     float* processedIter = image_getData(processed);
 
+    int offset = PIXEL_LOST_PER_AXIS / 2;
+
 #pragma omp parallel for default(none) \
-    shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth) \
+    shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth, offset) \
     schedule(static) num_threads(nThreads)
-    for (int i = 1; i < height - 1; i++) {
+    for (int i = offset; i < height - offset; i++) {
 #pragma omp simd collapse(2)
-        for (int j = 1; j < width - 1; j++) {
+        for (int j = offset; j < width - offset; j++) {
             for (int k = 0; k < channels; k++) {
                 processedIter[((i-1) * (width - 2) + (j-1)) * channels + k] = imageIter[((i-1) * width + j-1) * channels + k] * kernelIter[0] +
                         imageIter[((i-1) * width + j) * channels + k] * kernelIter[1] +
@@ -879,11 +915,13 @@ Image_t* convolutionOMPUnrollingParallelForSIMD(Image_t* image, float* kernel, i
     Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
     float* processedIter = image_getData(processed);
 
+    int offset = PIXEL_LOST_PER_AXIS / 2;
+
 #pragma omp parallel for simd default(none) \
-    shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth) \
+    shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth, offset) \
     collapse(2) schedule(static) num_threads(nThreads)
-    for (int i = 1; i < height - 1; i++) {
-        for (int j = 1; j < width - 1; j++) {
+    for (int i = offset; i < height - offset; i++) {
+        for (int j = offset; j < width - offset; j++) {
             for (int k = 0; k < channels; k++) {
                 processedIter[((i-1) * processedWidth + (j-1)) * channels + k] = imageIter[((i-1) * width + j-1) * channels + k] * kernelIter[0] +
                         imageIter[((i-1) * width + j) * channels + k] * kernelIter[1] +
@@ -913,12 +951,14 @@ Image_t* convolutionOMPUnrollingSIMDWidthRestrict(Image_t* image, float* kernel,
     Image_t* processed = new_image(processedWidth, image->height - 2, image->channels);
     float* __restrict processedIter = processed->data;
 
+    int offset = PIXEL_LOST_PER_AXIS / 2;
+
 #pragma omp parallel for default(none) \
-    shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth) \
+    shared(width, height, channels, imageIter, kernelIter, processedIter, processedWidth, offset) \
     schedule(static) num_threads(nThreads)
-    for (int i = 1; i < height - 1; i++) {
+    for (int i = offset; i < height - offset; i++) {
 #pragma omp simd
-        for (int j = 1; j < width - 1; j++) {
+        for (int j = offset; j < width - offset; j++) {
             for (int k = 0; k < channels; k++) {
                 processedIter[((i-1) * processedWidth + (j-1)) * channels + k] =
                         imageIter[((i-1) * width + j-1) * channels + k] * kernelIter[0] +
@@ -952,13 +992,15 @@ ImageSoA_t* convolutionOMPUnrollingSIMDWidthRestrictSoA(ImageSoA_t* image, float
     float* __restrict processedGIter = processed->g;
     float* __restrict processedBIter = processed->b;
 
+    int offset = PIXEL_LOST_PER_AXIS / 2;
+
 #pragma omp parallel for default(none) \
-    shared(width, height, imageRIter, imageGIter, imageBIter, \
+    shared(width, height, imageRIter, imageGIter, imageBIter, offset, \
     kernelIter, processedRIter, processedGIter, processedBIter, processedWidth) \
     schedule(static) num_threads(nThreads)
-    for (int i = 1; i < height - 1; i++) {
+    for (int i = offset; i < height - offset; i++) {
 #pragma omp simd
-        for (int j = 1; j < width - 1; j++) {
+        for (int j = offset; j < width - offset; j++) {
             processedRIter[((i-1) * processedWidth + (j-1))] =
                     imageRIter[((i-1) * width + j-1)] * kernelIter[0] +
                     imageRIter[((i-1) * width + j)] * kernelIter[1] +
