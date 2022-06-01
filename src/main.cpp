@@ -7,12 +7,12 @@
 
 #define IMPORT_PATH "../resources/source/"
 #define EXPORT_PATH "../resources/results/"
-#define IMAGE "lake"
+#define IMAGE "tiger"
 
-#define SEQUENTIAL false
-#define PARALLEL true
+#define SEQUENTIAL true
+#define PARALLEL false
 #define UNROLLING false
-#define SOA true
+#define SOA false
 #define ITER 1
 #define N_THREADS 2
 
