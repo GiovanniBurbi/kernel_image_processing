@@ -20,10 +20,10 @@
     int channels = image_getChannels(image);
     int processedWidth = width - PIXEL_LOST_PER_AXIS;
 
-    float* imageIter = image_getData(image);
+    const float* __restrict__ imageIter = image_getData(image);
 
     Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
-    float* processedIter = image_getData(processed);
+    float* __restrict__ processedIter = image_getData(processed);
 
     float accum;
     int offset = PIXEL_LOST_PER_AXIS / 2;
@@ -59,14 +59,14 @@ ImageSoA_t* convolutionSoA(ImageSoA_t* image, const float* __restrict__ kernel){
         return nullptr;
     }
 
-    float* imageRIter = image_getR(image);
-    float* imageGIter = image_getG(image);
-    float* imageBIter = image_getB(image);
+    const float* __restrict__ imageRIter = image_getR(image);
+    const float* __restrict__ imageGIter = image_getG(image);
+    const float* __restrict__ imageBIter = image_getB(image);
 
     ImageSoA_t* processed = new_imageSoA(processedWidth, height - PIXEL_LOST_PER_AXIS, RGB_CHANNELS);
-    float* processedRIter = image_getR(processed);
-    float* processedGIter = image_getG(processed);
-    float* processedBIter = image_getB(processed);
+    float* __restrict__ processedRIter = image_getR(processed);
+    float* __restrict__ processedGIter = image_getG(processed);
+    float* __restrict__ processedBIter = image_getB(processed);
 
     float accumR;
     float accumG;
@@ -113,10 +113,10 @@ Image_t* convolutionUnrolling(Image_t* image, const float* __restrict__ kernel){
         return nullptr;
     }
 
-    float* imageIter = image_getData(image);
+    const float* __restrict__ imageIter = image_getData(image);
 
     Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, RGB_CHANNELS);
-    float* processedIter = image_getData(processed);
+    float* __restrict__ processedIter = image_getData(processed);
 
     int offset = PIXEL_LOST_PER_AXIS / 2;
 
@@ -170,10 +170,10 @@ Image_t* convolutionUnrolling(Image_t* image, const float* __restrict__ kernel){
     int channels = image_getChannels(image);
     int processedWidth = width - PIXEL_LOST_PER_AXIS;
 
-    float* imageIter = image_getData(image);
+    const float* __restrict__ imageIter = image_getData(image);
 
     Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
-    float* processedIter = image_getData(processed);
+    float* __restrict__ processedIter = image_getData(processed);
 
     int offset = PIXEL_LOST_PER_AXIS / 2;
 
@@ -216,10 +216,10 @@ Image_t* convolutionUnrollingChannels(Image_t* image, const float* __restrict__ 
         return nullptr;
     }
 
-    float* imageIter = image_getData(image);
+    const float* __restrict__ imageIter = image_getData(image);
 
     Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, RGB_CHANNELS);
-    float* processedIter = image_getData(processed);
+    float* __restrict__ processedIter = image_getData(processed);
 
     float accumR;
     float accumG;
@@ -265,14 +265,14 @@ ImageSoA_t* convolutionUnrollingSoA(ImageSoA_t* image, const float* __restrict__
         return nullptr;
     }
 
-    float* imageRIter = image_getR(image);
-    float* imageGIter = image_getG(image);
-    float* imageBIter = image_getB(image);
+    const float* __restrict__ imageRIter = image_getR(image);
+    const float* __restrict__ imageGIter = image_getG(image);
+    const float* __restrict__ imageBIter = image_getB(image);
 
     ImageSoA_t* processed = new_imageSoA(processedWidth, height - PIXEL_LOST_PER_AXIS, RGB_CHANNELS);
-    float* processedRIter = image_getR(processed);
-    float* processedGIter = image_getG(processed);
-    float* processedBIter = image_getB(processed);
+    float* __restrict__ processedRIter = image_getR(processed);
+    float* __restrict__ processedGIter = image_getG(processed);
+    float* __restrict__ processedBIter = image_getB(processed);
 
     int offset = PIXEL_LOST_PER_AXIS / 2;
 
@@ -325,10 +325,10 @@ Image_t* convolutionOMPNaive(Image_t* image, const float* __restrict__ kernel, i
     int channels = image_getChannels(image);
     int processedWidth = width - PIXEL_LOST_PER_AXIS;
 
-    float* imageIter = image_getData(image);
+    const float* __restrict__ imageIter = image_getData(image);
 
     Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
-    float* processedIter = image_getData(processed);
+    float* __restrict__ processedIter = image_getData(processed);
 
     float accum;
 
@@ -374,10 +374,10 @@ Image_t* convolutionOMPUnrollingChannels(Image_t* image, const float* __restrict
         return nullptr;
     }
 
-    float* imageIter = image_getData(image);
+    const float* __restrict__ imageIter = image_getData(image);
 
     Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, RGB_CHANNELS);
-    float* processedIter = image_getData(processed);
+    float* __restrict__ processedIter = image_getData(processed);
 
     float accumR;
     float accumG;
@@ -431,14 +431,14 @@ ImageSoA_t* convolutionOMPNaiveSoA(ImageSoA_t* image, const float* __restrict__ 
         return nullptr;
     }
 
-    float* imageRIter = image_getR(image);
-    float* imageGIter = image_getG(image);
-    float* imageBIter = image_getB(image);
+    const float* __restrict__ imageRIter = image_getR(image);
+    const float* __restrict__ imageGIter = image_getG(image);
+    const float* __restrict__ imageBIter = image_getB(image);
 
     ImageSoA_t* processed = new_imageSoA(processedWidth, height - PIXEL_LOST_PER_AXIS, RGB_CHANNELS);
-    float* processedRIter = image_getR(processed);
-    float* processedGIter = image_getG(processed);
-    float* processedBIter = image_getB(processed);
+    float* __restrict__ processedRIter = image_getR(processed);
+    float* __restrict__ processedGIter = image_getG(processed);
+    float* __restrict__ processedBIter = image_getB(processed);
 
     float accumR;
     float accumG;
@@ -486,10 +486,10 @@ Image_t* convolutionOMPUnrollingSIMDWidth(Image_t* image, const float* __restric
     int channels = image_getChannels(image);
     int processedWidth = width - PIXEL_LOST_PER_AXIS;
 
-    float* imageIter = image_getData(image);
+    const float* __restrict__ imageIter = image_getData(image);
 
     Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
-    float* processedIter = image_getData(processed);
+    float* __restrict__ processedIter = image_getData(processed);
 
     int offset = PIXEL_LOST_PER_AXIS / 2;
 
@@ -531,14 +531,14 @@ ImageSoA_t* convolutionOMPUnrollingSIMDWidthSoA(ImageSoA_t* image, const float* 
         return nullptr;
     }
 
-    float* imageRIter = image_getR(image);
-    float* imageGIter = image_getG(image);
-    float* imageBIter = image_getB(image);
+    const float* __restrict__ imageRIter = image_getR(image);
+    const float* __restrict__ imageGIter = image_getG(image);
+    const float* __restrict__ imageBIter = image_getB(image);
 
     ImageSoA_t* processed = new_imageSoA(processedWidth, height - PIXEL_LOST_PER_AXIS, RGB_CHANNELS);
-    float* processedRIter = image_getR(processed);
-    float* processedGIter = image_getG(processed);
-    float* processedBIter = image_getB(processed);
+    float* __restrict__ processedRIter = image_getR(processed);
+    float* __restrict__ processedGIter = image_getG(processed);
+    float* __restrict__ processedBIter = image_getB(processed);
 
     int offset = PIXEL_LOST_PER_AXIS / 2;
 
@@ -602,10 +602,10 @@ Image_t* convolutionOMPUnrolling(Image_t* image, const float* __restrict__ kerne
         return nullptr;
     }
 
-    float* imageIter = image_getData(image);
+    const float* __restrict__ imageIter = image_getData(image);
 
     Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, RGB_CHANNELS);
-    float* processedIter = image_getData(processed);
+    float* __restrict__ processedIter = image_getData(processed);
 
     int offset = PIXEL_LOST_PER_AXIS / 2;
 
@@ -663,10 +663,10 @@ Image_t* convolutionOMPUnrollingKernel(Image_t* image, const float* __restrict__
     int channels = image_getChannels(image);
     int processedWidth = width - PIXEL_LOST_PER_AXIS;
 
-    float* imageIter = image_getData(image);
+    const float* __restrict__ imageIter = image_getData(image);
 
     Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
-    float* processedIter = image_getData(processed);
+    float* __restrict__ processedIter = image_getData(processed);
 
     int offset = PIXEL_LOST_PER_AXIS / 2;
 
@@ -707,14 +707,14 @@ ImageSoA_t* convolutionOMPUnrollingSoA(ImageSoA_t* image, const float* __restric
         return nullptr;
     }
 
-    float* imageRIter = image_getR(image);
-    float* imageGIter = image_getG(image);
-    float* imageBIter = image_getB(image);
+    const float* __restrict__ imageRIter = image_getR(image);
+    const float* __restrict__ imageGIter = image_getG(image);
+    const float* __restrict__ imageBIter = image_getB(image);
 
     ImageSoA_t* processed = new_imageSoA(processedWidth, height - PIXEL_LOST_PER_AXIS, RGB_CHANNELS);
-    float* processedRIter = image_getR(processed);
-    float* processedGIter = image_getG(processed);
-    float* processedBIter = image_getB(processed);
+    float* __restrict__ processedRIter = image_getR(processed);
+    float* __restrict__ processedGIter = image_getG(processed);
+    float* __restrict__ processedBIter = image_getB(processed);
 
     int offset = PIXEL_LOST_PER_AXIS / 2;
 
@@ -772,10 +772,10 @@ Image_t* convolutionOMPUnrollingSIMDChannels(Image_t* image, const float* __rest
     int channels = image_getChannels(image);
     int processedWidth = width - PIXEL_LOST_PER_AXIS;
 
-    float* imageIter = image_getData(image);
+    const float* __restrict__ imageIter = image_getData(image);
 
     Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
-    float* processedIter = image_getData(processed);
+    float* __restrict__ processedIter = image_getData(processed);
 
     int offset = PIXEL_LOST_PER_AXIS / 2;
 
@@ -813,10 +813,10 @@ Image_t* convolutionOMPUnrollingDoubleSIMD(Image_t* image, const float* __restri
     int channels = image_getChannels(image);
     int processedWidth = width - PIXEL_LOST_PER_AXIS;
 
-    float* imageIter = image_getData(image);
+    const float* __restrict__ imageIter = image_getData(image);
 
     Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
-    float* processedIter = image_getData(processed);
+    float* __restrict__ processedIter = image_getData(processed);
 
     int offset = PIXEL_LOST_PER_AXIS / 2;
 
@@ -855,10 +855,10 @@ Image_t* convolutionOMPUnrollingSIMDCollapse(Image_t* image, const float* __rest
     int channels = image_getChannels(image);
     int processedWidth = width - PIXEL_LOST_PER_AXIS;
 
-    float* imageIter = image_getData(image);
+    const float* __restrict__ imageIter = image_getData(image);
 
     Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
-    float* processedIter = image_getData(processed);
+    float* __restrict__ processedIter = image_getData(processed);
 
     int offset = PIXEL_LOST_PER_AXIS / 2;
 
@@ -896,10 +896,10 @@ Image_t* convolutionOMPUnrollingParallelForSIMD(Image_t* image, const float* __r
     int channels = image_getChannels(image);
     int processedWidth = width - PIXEL_LOST_PER_AXIS;
 
-    float* imageIter = image_getData(image);
+    const float* __restrict__ imageIter = image_getData(image);
 
     Image_t* processed = new_image(processedWidth, height - PIXEL_LOST_PER_AXIS, channels);
-    float* processedIter = image_getData(processed);
+    float* __restrict__ processedIter = image_getData(processed);
 
     int offset = PIXEL_LOST_PER_AXIS / 2;
 
