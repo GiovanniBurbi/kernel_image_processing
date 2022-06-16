@@ -23,6 +23,25 @@ float* createKernel(int type) {
             return nullptr;
     }
 }
+
+std::string kernelName(int type){
+    switch (type) {
+        case kernelsType::boxBlur:
+            return "BoxBlur";
+        case kernelsType::gaussianBlur:
+            return "GaussianBlur";
+        case kernelsType::emboss:
+            return "Emboss";
+        case kernelsType::outline:
+            return "Outline";
+        case kernelsType::sharpen:
+            return "Sharpen";
+        default:
+            std::cerr << "Filter type not available." << std::endl;
+            return "";
+    }
+}
+
 float* allocateEmptyKernel() {
     auto* kernel = (float*) malloc(sizeof(float) * KERNEL_SIZE);
     return kernel;

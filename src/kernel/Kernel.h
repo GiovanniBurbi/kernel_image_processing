@@ -26,4 +26,6 @@ float* createGaussianBlurKernel();
 float* createOutlineKernel();
 float* createSharpenKernel();
 
+std::string kernelName(int type);
+
 #endif //KERNEL_IMAGE_PROCESSING_KERNEL_H

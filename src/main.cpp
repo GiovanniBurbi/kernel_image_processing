@@ -28,7 +28,10 @@ int main() {
     filename.append(IMPORT_PATH).append(IMAGE).append(".ppm");
     output_name.append(EXPORT_PATH).append(IMAGE);
 
-    float* kernel = createKernel(kernelsType::outline);
+    auto maskType = kernelsType::sharpen;
+
+    float* kernel = createKernel(maskType);
+    std::string maskName = kernelName(maskType);
 
     if (!SOA) {
         float time = 0;
@@ -57,7 +60,7 @@ int main() {
                         image_delete(result);
                     else output = result;
                 }
-                output_name.append("Sequential").append("Unrolling");
+                output_name.append(maskName).append("Sequential").append("Unrolling");
             } else {
                 log.append("naive ");
                 for (int i = 0; i < ITER; i++) {
@@ -70,7 +73,7 @@ int main() {
                         image_delete(result);
                     else output = result;
                 }
-                output_name.append("Sequential").append("Naive");
+                output_name.append(maskName).append("Sequential").append("Naive");
             }
 
             log.append("took ").append(std::to_string(time/ITER)).append(" microseconds");
@@ -101,7 +104,7 @@ int main() {
                         image_delete(result);
                     else output = result;
                 }
-                output_name.append("Openmp").append("Parallel").append("Unrolling").append(std::to_string(N_THREADS)).append("Threads");
+                output_name.append(maskName).append("Openmp").append("Parallel").append("Unrolling").append(std::to_string(N_THREADS)).append("Threads");
             } else {
                 log.append("naive ");
 
@@ -115,7 +118,7 @@ int main() {
                         image_delete(result);
                     else output = result;
                 }
-                output_name.append("Openmp").append("Parallel").append("Naive").append(std::to_string(N_THREADS)).append("Threads");
+                output_name.append(maskName).append("Openmp").append("Parallel").append("Naive").append(std::to_string(N_THREADS)).append("Threads");
             }
 
             log.append("took ").append(std::to_string(time/ITER)).append(" microseconds");
@@ -155,7 +158,7 @@ int main() {
                         image_delete(result);
                     else output = result;
                 }
-                output_name.append("Sequential").append("Unrolling");
+                output_name.append(maskName).append("Sequential").append("Unrolling");
             } else {
                 log.append("naive ");
                 for (int i = 0; i < ITER; i++) {
@@ -168,7 +171,7 @@ int main() {
                         image_delete(result);
                     else output = result;
                 }
-                output_name.append("Sequential").append("SoA").append("Naive");
+                output_name.append(maskName).append("Sequential").append("SoA").append("Naive");
             }
 
             log.append("took ").append(std::to_string(time/ITER)).append(" microseconds");
@@ -195,7 +198,7 @@ int main() {
                         image_delete(result);
                     else output = result;
                 }
-                output_name.append("Openmp").append("Parallel").append("Unrolling").append(std::to_string(N_THREADS)).append("Threads");
+                output_name.append(maskName).append("Openmp").append("Parallel").append("Unrolling").append(std::to_string(N_THREADS)).append("Threads");
             } else {
                 log.append("naive ");
 
@@ -209,7 +212,7 @@ int main() {
                         image_delete(result);
                     else output = result;
                 }
-                output_name.append("Openmp").append("Parallel").append("Naive").append(std::to_string(N_THREADS)).append("Threads");
+                output_name.append(maskName).append("Openmp").append("Parallel").append("Naive").append(std::to_string(N_THREADS)).append("Threads");
             }
 
             log.append("took ").append(std::to_string(time/ITER)).append(" microseconds");
