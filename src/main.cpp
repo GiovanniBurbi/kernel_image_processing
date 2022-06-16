@@ -1,24 +1,27 @@
+#include <cassert>
+#include <chrono>
+
 #include "image/PpmParser.h"
 #include "kernel/Kernel.h"
 #include "convolution/Convolution.h"
 #include "utils/OpenMPVersion.h"
-
-#include <chrono>
 
 #define IMPORT_PATH "../resources/source/"
 #define EXPORT_PATH "../resources/results/"
 #define IMAGE "deer480p"
 
 #define SEQUENTIAL true
-#define PARALLEL true
-#define UNROLLING true
-#define SOA true
+#define PARALLEL false
+#define UNROLLING false
+#define SOA false
 #define ITER 15
-#define N_THREADS 12
+#define N_THREADS 8
 
 
 int main() {
 //    checkVersionOpenMP();
+    assert((SEQUENTIAL && PARALLEL) != true);
+
     std::string filename;
     std::string output_name;
 
