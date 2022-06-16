@@ -3,10 +3,9 @@
 //
 
 #include "Convolution.h"
+#include "../kernel/Kernel.h"
 #include <iostream>
 
-#define KERNEL_WIDTH 3
-#define KERNEL_RADIUS KERNEL_WIDTH / 2
 #define PIXEL_LOST_PER_AXIS KERNEL_RADIUS * 2
 #define RGB_CHANNELS 3
 
@@ -28,7 +27,7 @@
     float accum;
     int offset = PIXEL_LOST_PER_AXIS / 2;
     for (int i = offset; i < height - offset; i++) {
-        for (int j = 1; j < width - offset; j++) {
+        for (int j = offset; j < width - offset; j++) {
             for (int k = 0; k < channels; k++) {
                 accum = 0;
                 for (int y = -KERNEL_RADIUS; y <= KERNEL_RADIUS; y++) {

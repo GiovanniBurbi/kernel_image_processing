@@ -4,7 +4,7 @@
 
 #include "Kernel.h"
 
-#define KERNEL_SIZE 9
+#define KERNEL_SIZE (KERNEL_WIDTH * KERNEL_WIDTH)
 
 float* createKernel(int type) {
     switch (type) {

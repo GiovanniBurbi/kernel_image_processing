@@ -7,14 +7,14 @@
 
 #define IMPORT_PATH "../resources/source/"
 #define EXPORT_PATH "../resources/results/"
-#define IMAGE "lake"
+#define IMAGE "deer480p"
 
-#define SEQUENTIAL false
+#define SEQUENTIAL true
 #define PARALLEL true
 #define UNROLLING true
 #define SOA true
-#define ITER 1
-#define N_THREADS 2
+#define ITER 15
+#define N_THREADS 12
 
 
 int main() {
@@ -44,10 +44,12 @@ int main() {
                 log.append("with unrolling ");
                 for (int i = 0; i < ITER; i++) {
                     startTime = std::chrono::high_resolution_clock::now();
+//                    For RGB image only
                     Image_t *result = convolutionUnrollingChannels(image, kernel);
+//                    For RGB image and 3x3 kernels
 //                    Image_t *result = convolutionUnrolling(image, kernel);
                     endTime = std::chrono::high_resolution_clock::now();
-                    time += std::chrono::duration_cast<std::chrono::duration<float>>(endTime - startTime).count();
+                    time += std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
                     if (i != ITER - 1)
                         image_delete(result);
                     else output = result;
@@ -57,9 +59,10 @@ int main() {
                 log.append("naive ");
                 for (int i = 0; i < ITER; i++) {
                     startTime = std::chrono::high_resolution_clock::now();
+//                    Naive generic convolution
                     Image_t *result = convolution(image, kernel);
                     endTime = std::chrono::high_resolution_clock::now();
-                    time += std::chrono::duration_cast<std::chrono::duration<float>>(endTime - startTime).count();
+                    time += std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
                     if (i != ITER - 1)
                         image_delete(result);
                     else output = result;
@@ -67,13 +70,13 @@ int main() {
                 output_name.append("Sequential").append("Naive");
             }
 
-            log.append("took ").append(std::to_string(time/ITER)).append(" seconds");
+            log.append("took ").append(std::to_string(time/ITER)).append(" microseconds");
             printf("%s\n", log.c_str());
         }
 
         if (PARALLEL) {
             std::string log;
-            log.append("OpenMP parallel version ");
+            log.append("OpenMP parallel version ").append("with ").append(std::to_string(N_THREADS)).append(" threads ");
 
             std::chrono::high_resolution_clock::time_point startTime;
             std::chrono::high_resolution_clock::time_point endTime;
@@ -83,10 +86,14 @@ int main() {
 
                 for (int i = 0; i < ITER; i++) {
                     startTime = std::chrono::high_resolution_clock::now();
-                    Image_t* result = convolutionOMPUnrolling(image, kernel, N_THREADS);
-//                    Image_t* result = convolutionOMPUnrollingParallelForSIMD(image, kernel, N_THREADS);
+//                   For 3x3 kernels only
+//                    Image_t* result = convolutionOMPUnrollingSIMDChannels(image, kernel, N_THREADS);ù
+//                  For RGB image and 3x3 kernel only
+//                    Image_t* result = convolutionOMPUnrolling(image, kernel, N_THREADS);
+//                  For RGB image only
+                    Image_t *result = convolutionOMPUnrollingChannels(image, kernel, N_THREADS);
                     endTime = std::chrono::high_resolution_clock::now();
-                    time += std::chrono::duration_cast<std::chrono::duration<float>>(endTime - startTime).count();
+                    time += std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
                     if (i != ITER - 1)
                         image_delete(result);
                     else output = result;
@@ -97,10 +104,10 @@ int main() {
 
                 for (int i = 0; i < ITER; i++) {
                     startTime = std::chrono::high_resolution_clock::now();
-//                    Image_t *result = convolutionOMPNaive(image, kernel, N_THREADS);
-                    Image_t *result = convolutionOMPUnrollingChannels(image, kernel, N_THREADS);
+//                    Generic naive convolution
+                    Image_t *result = convolutionOMPNaive(image, kernel, N_THREADS);
                     endTime = std::chrono::high_resolution_clock::now();
-                    time += std::chrono::duration_cast<std::chrono::duration<float>>(endTime - startTime).count();
+                    time += std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
                     if (i != ITER - 1)
                         image_delete(result);
                     else output = result;
@@ -108,7 +115,7 @@ int main() {
                 output_name.append("Openmp").append("Parallel").append("Naive").append(std::to_string(N_THREADS)).append("Threads");
             }
 
-            log.append("took ").append(std::to_string(time/ITER)).append(" seconds");
+            log.append("took ").append(std::to_string(time/ITER)).append(" microseconds");
             printf("%s\n", log.c_str());
         }
 
@@ -137,9 +144,10 @@ int main() {
                 log.append("with unrolling ");
                 for (int i = 0; i < ITER; i++) {
                     startTime = std::chrono::high_resolution_clock::now();
+//                    For RGB image and 3x3 kernels only
                     ImageSoA_t *result = convolutionUnrollingSoA(image, kernel);
                     endTime = std::chrono::high_resolution_clock::now();
-                    time += std::chrono::duration_cast<std::chrono::duration<float>>(endTime - startTime).count();
+                    time += std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
                     if (i != ITER - 1)
                         image_delete(result);
                     else output = result;
@@ -149,9 +157,10 @@ int main() {
                 log.append("naive ");
                 for (int i = 0; i < ITER; i++) {
                     startTime = std::chrono::high_resolution_clock::now();
+//                    For RGB image only
                     ImageSoA_t *result = convolutionSoA(image, kernel);
                     endTime = std::chrono::high_resolution_clock::now();
-                    time += std::chrono::duration_cast<std::chrono::duration<float>>(endTime - startTime).count();
+                    time += std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
                     if (i != ITER - 1)
                         image_delete(result);
                     else output = result;
@@ -159,13 +168,13 @@ int main() {
                 output_name.append("Sequential").append("SoA").append("Naive");
             }
 
-            log.append("took ").append(std::to_string(time/ITER)).append(" seconds");
+            log.append("took ").append(std::to_string(time/ITER)).append(" microseconds");
             printf("%s\n", log.c_str());
         }
 
         if (PARALLEL) {
             std::string log;
-            log.append("OpenMP parallel version ");
+            log.append("OpenMP parallel version ").append("with ").append(std::to_string(N_THREADS)).append(" threads ");
 
             std::chrono::high_resolution_clock::time_point startTime;
             std::chrono::high_resolution_clock::time_point endTime;
@@ -175,9 +184,10 @@ int main() {
 
                 for (int i = 0; i < ITER; i++) {
                     startTime = std::chrono::high_resolution_clock::now();
+//                    For RGB image and 3x3 kernels only
                     ImageSoA_t* result = convolutionOMPUnrollingSoA(image, kernel, N_THREADS);
                     endTime = std::chrono::high_resolution_clock::now();
-                    time += std::chrono::duration_cast<std::chrono::duration<float>>(endTime - startTime).count();
+                    time += std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
                     if (i != ITER - 1)
                         image_delete(result);
                     else output = result;
@@ -188,9 +198,10 @@ int main() {
 
                 for (int i = 0; i < ITER; i++) {
                     startTime = std::chrono::high_resolution_clock::now();
+//                    For RGB images only
                     ImageSoA_t *result = convolutionOMPNaiveSoA(image, kernel, N_THREADS);
                     endTime = std::chrono::high_resolution_clock::now();
-                    time += std::chrono::duration_cast<std::chrono::duration<float>>(endTime - startTime).count();
+                    time += std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
                     if (i != ITER - 1)
                         image_delete(result);
                     else output = result;
@@ -198,7 +209,7 @@ int main() {
                 output_name.append("Openmp").append("Parallel").append("Naive").append(std::to_string(N_THREADS)).append("Threads");
             }
 
-            log.append("took ").append(std::to_string(time/ITER)).append(" seconds");
+            log.append("took ").append(std::to_string(time/ITER)).append(" microseconds");
             printf("%s\n", log.c_str());
         }
 
