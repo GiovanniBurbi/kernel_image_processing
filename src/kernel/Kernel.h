@@ -7,6 +7,9 @@
 
 #include <iostream>
 
+#define KERNEL_WIDTH 3
+#define KERNEL_RADIUS KERNEL_WIDTH / 2
+
 enum kernelsType {
     boxBlur = 0,
     gaussianBlur = 1,
@@ -22,5 +25,7 @@ float* createEmbossKernel();
 float* createGaussianBlurKernel();
 float* createOutlineKernel();
 float* createSharpenKernel();
+
+std::string kernelName(int type);
 
 #endif //KERNEL_IMAGE_PROCESSING_KERNEL_H
