@@ -8,14 +8,14 @@
 
 #define IMPORT_PATH "../resources/source/"
 #define EXPORT_PATH "../resources/results/"
-#define IMAGE "deer480p"
+#define IMAGE "lake"
 
-#define SEQUENTIAL true
-#define PARALLEL false
+#define SEQUENTIAL false
+#define PARALLEL true
 #define UNROLLING false
 #define SOA false
 #define ITER 15
-#define N_THREADS 8
+#define N_THREADS 12
 
 
 int main() {
@@ -28,7 +28,7 @@ int main() {
     filename.append(IMPORT_PATH).append(IMAGE).append(".ppm");
     output_name.append(EXPORT_PATH).append(IMAGE);
 
-    auto maskType = kernelsType::sharpen;
+    auto maskType = kernelsType::outline;
 
     float* kernel = createKernel(maskType);
     std::string maskName = kernelName(maskType);
@@ -51,9 +51,9 @@ int main() {
                 for (int i = 0; i < ITER; i++) {
                     startTime = std::chrono::high_resolution_clock::now();
 //                    For RGB image only
-                    Image_t *result = convolutionUnrollingChannels(image, kernel);
+//                    Image_t *result = convolutionUnrollingChannels(image, kernel);
 //                    For RGB image and 3x3 kernels
-//                    Image_t *result = convolutionUnrolling(image, kernel);
+                    Image_t *result = convolutionUnrolling(image, kernel);
                     endTime = std::chrono::high_resolution_clock::now();
                     time += std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
                     if (i != ITER - 1)
@@ -93,11 +93,11 @@ int main() {
                 for (int i = 0; i < ITER; i++) {
                     startTime = std::chrono::high_resolution_clock::now();
 //                   For 3x3 kernels only
-//                    Image_t* result = convolutionOMPUnrollingSIMDChannels(image, kernel, N_THREADS);ù
+                    Image_t* result = convolutionOMPUnrollingSIMDChannels(image, kernel, N_THREADS);
 //                  For RGB image and 3x3 kernel only
 //                    Image_t* result = convolutionOMPUnrolling(image, kernel, N_THREADS);
 //                  For RGB image only
-                    Image_t *result = convolutionOMPUnrollingChannels(image, kernel, N_THREADS);
+//                    Image_t *result = convolutionOMPUnrollingChannels(image, kernel, N_THREADS);
                     endTime = std::chrono::high_resolution_clock::now();
                     time += std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
                     if (i != ITER - 1)
