@@ -15,7 +15,7 @@ We show how we can exploit the **hardware parallel mechanisms** of CPUs to add t
 
 We also show how using a cache friendly data organization in memory, the **Structure of Arrays**, results in better performance.
 
-For more details on the development process of the project and the tools used see the [Final Report]().
+For more details on the development process of the project and the tools used see the [Final Report](https://github.com/GiovanniBurbi/kernel_image_processing/blob/master/Parallel_Computing_Kernel_Image_Processing.pdf).
 
 
 <div align="center">
