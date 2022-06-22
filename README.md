@@ -1,5 +1,5 @@
 # Kernel Image Processing
-> Parallel Computing project using c++ and OpenMP.
+> Parallel Computing project using C++ and OpenMP.
 
 ## Prerequisites
 * gcc 6.3.0
